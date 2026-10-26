@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Operational checkpoint and test reports stay local.
+/reports/checkpoints/
+/reports/test-results/
