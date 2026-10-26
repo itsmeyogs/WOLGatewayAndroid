@@ -1,6 +1,6 @@
 # UI/UX Design — WoL Gateway
 
-**Status:** Approved-for-review specification — no UI implementation yet
+**Status:** Approved-for-review specification — CP1 foundation implemented; UI implementation deferred to CP3
 **Tanggal:** 2026-10-26
 
 ## 1. Design direction
@@ -199,8 +199,10 @@ API server, tunnel, target device, and background service each get separate labe
 ## 8. Compose conventions
 
 - Screen-level composables receive immutable state and event lambdas.
-- ViewModels expose `StateFlow<UiState>` and event methods.
+- ViewModels expose `StateFlow<UiState>` and event methods; production ViewModels use Hilt constructor injection and `hiltViewModel()` retrieval.
 - Use lifecycle-aware collection.
+- `MainActivity` hanya menjadi host lifecycle; navigation, screen, dan reusable component berada pada file/package masing-masing.
+- Setiap Compose screen/component memiliki file sendiri; preview ditempatkan bersama component yang dipreview.
 - Keep previews with representative online/offline/unknown/loading/error states.
 - Reuse tokens/components; no screen-local duplicated status colors.
 - No network/database calls in Composable bodies.

@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** Proposed — Checkpoint 0
+**Status:** Proposed — Checkpoint 1 foundation implemented
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -24,7 +24,7 @@ flowchart LR
 
 ### Presentation
 
-Compose screens, reusable components, ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. Tidak memuat socket, DAO, atau business rule.
+Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. Tidak memuat socket, DAO, atau business rule.
 
 ### Domain
 
@@ -32,11 +32,11 @@ Model `Device`, status/result enums, validation, use cases, repository/service i
 
 ### Data
 
-Room entity/DAO/database, DataStore preferences, secure secret adapter, repository implementations, mapping persistence/domain.
+Room entity/DAO/database, DataStore preferences, secure secret adapter, repository implementations, mapping persistence/domain. Hilt menyediakan database, preferences, dan repository bindings pada `SingletonComponent`.
 
 ### Gateway
 
-Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung.
+Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP1 hanya menyediakan lifecycle skeleton; route dan product behavior masuk CP6.
 
 ### WoL/network
 
@@ -61,8 +61,10 @@ Tetap satu module sampai kebutuhan build/runtime terbukti. Package awal:
 ```text
 com.yihs.wolgateway
 ├── app
+│   └── WolGatewayApplication.kt
 ├── data
 │   ├── local
+│   │   └── entity
 │   ├── preferences
 │   ├── secure
 │   └── repository
@@ -89,12 +91,20 @@ com.yihs.wolgateway
 ├── root
 └── ui
     ├── navigation
+    │   └── AppNavHost.kt
     ├── screen
+    │   └── dashboard
+    │       ├── DashboardScreen.kt
+    │       └── FoundationViewModel.kt
     ├── component
     └── theme
 ```
 
 Jangan membuat module/abstraction tambahan sebelum ada kebutuhan nyata.
+
+Aturan struktur: setiap top-level class, interface, enum, data class, dan Compose component berada pada file sendiri. Entity Room berada di `data/local/entity`; implementasi server berada di `gateway/server`. `MainActivity` hanya menjadi host lifecycle dan memanggil `AppNavHost`; layout screen/component tidak diletakkan di Activity.
+
+CP1 memilih Hilt sebagai dependency injection framework. `MainActivity` memakai `@AndroidEntryPoint`; ViewModel memakai `@HiltViewModel` dan Compose mengambilnya melalui `hiltViewModel()`. Manual service locator tidak digunakan.
 
 ## 4. Data ownership
 

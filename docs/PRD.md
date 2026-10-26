@@ -1,6 +1,6 @@
 # Product Requirements Document — WoL Gateway
 
-**Status:** Draft for approval — Checkpoint 0
+**Status:** Draft for approval — Checkpoint 1 foundation implemented
 **Tanggal:** 2026-10-26
 **Package:** `com.yihs.wolgateway`
 
@@ -124,9 +124,11 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 
 ## 7. Non-functional requirements
 
-- Kotlin, Android Native, Compose Material 3, MVVM, Coroutines/Flow.
+- Kotlin, Android Native, Compose Material 3, MVVM, Coroutines/Flow, Hilt dependency injection.
 - Min SDK ditetapkan `29` (Android 10), sesuai device ARM64 non-root yang tersedia dan baseline runtime tunnel yang akan divalidasi.
 - Build reproducible dan dependency versions dipin melalui version catalog.
+- Dependency injection memakai Hilt; Application, Activity, ViewModel, database, preferences, dan repository bindings mengikuti Hilt component scope.
+- Struktur kode memisahkan setiap top-level class/component ke file dan package sesuai tanggung jawab; Activity tidak memuat layout screen.
 - UI accessible, scrollable, font scaling, light/dark theme.
 - Resource cleanup saat stop, cancellation, process exit, network change, dan app shutdown.
 - Diagnostics membedakan automatic test, emulator, dan real device.
