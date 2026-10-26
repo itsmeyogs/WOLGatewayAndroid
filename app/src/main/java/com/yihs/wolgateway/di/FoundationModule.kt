@@ -4,8 +4,12 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
-import com.yihs.wolgateway.data.local.FoundationDatabase
+import com.yihs.wolgateway.data.local.DeviceDao
+import com.yihs.wolgateway.data.local.GatewayDatabase
+import com.yihs.wolgateway.data.local.MIGRATION_1_2
 import com.yihs.wolgateway.data.preferences.gatewayPreferences
+import com.yihs.wolgateway.data.repository.RoomDeviceRepository
+import com.yihs.wolgateway.domain.repository.DeviceRepository
 import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.KtorGatewayServer
 import dagger.Module
@@ -20,8 +24,17 @@ import javax.inject.Singleton
 object FoundationModule {
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): FoundationDatabase =
-        Room.databaseBuilder(context, FoundationDatabase::class.java, "wol_gateway.db").build()
+    fun provideDatabase(@ApplicationContext context: Context): GatewayDatabase =
+        Room.databaseBuilder(context, GatewayDatabase::class.java, "wol_gateway.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
+
+    @Provides
+    fun provideDeviceDao(database: GatewayDatabase): DeviceDao = database.deviceDao()
+
+    @Provides
+    @Singleton
+    fun provideDeviceRepository(repository: RoomDeviceRepository): DeviceRepository = repository
 
     @Provides
     @Singleton
