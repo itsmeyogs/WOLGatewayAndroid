@@ -8,8 +8,8 @@
 
 - Existing single Android module `:app`.
 - Package/application ID `com.yihs.wolgateway`.
-- Existing Compose template only.
-- AGP `9.4.1`, Gradle `9.8.0`, Kotlin `2.2.10`, Compose BOM `2026.02.01`.
+- Existing Compose template, now organized into separate navigation/screen/component files.
+- AGP `9.4.1`, Gradle `9.6.0`, Kotlin `2.4.21`, Compose BOM `2026.09.00`.
 - compile/target SDK `37`, min SDK `29` (Android 10).
 - Existing dependency set lacks Hilt, KSP, Ktor, Room, DataStore, and secure storage.
 - Existing staged/unstaged `.idea` changes are user work and out of scope.
@@ -52,11 +52,13 @@ Explicit exclusion: no application feature implementation.
 Acceptance: four docs available and internally consistent.
 Test: `:app:tasks --all`, `:app:assembleDebug`, `:app:testDebugUnitTest`, `git diff --check`, ignore verification.
 
-### CP1 — Foundation
+### CP1 — Foundation — executed
 
-Add only compatible foundation dependencies and configuration. Establish Application/DI, serialization, coroutine/testing baseline, Ktor lifecycle skeleton, Room/DataStore interfaces without product behavior.
-Acceptance: debug build, unit tests, and DI smoke test pass.
-Risk: KSP/AGP/Kotlin mismatch.
+Add only compatible foundation dependencies and configuration. Establish `@HiltAndroidApp` Application, `@AndroidEntryPoint` Activity, `@HiltViewModel`/`hiltViewModel()` baseline, serialization, coroutine/testing baseline, Ktor lifecycle skeleton, Room/DataStore interfaces without product behavior.
+Acceptance: debug build, unit tests, lint, and Hilt code generation pass. Detailed evidence: `reports/checkpoints/CP1-foundation.md`.
+Decision: Hilt is required for DI. KSP is used for Hilt and Room code generation. Manual service locator is not used.
+Compatibility note: Hilt `2.60.1` is pinned because earlier Hilt Gradle plugin versions rely on removed AGP 9 `BaseExtension`. Source structure follows one top-level class/component per file; `MainActivity` is lifecycle host only. `android.disallowKotlinSourceSets` is not required after the dependency/toolchain update and is absent from project properties.
+Risk: KSP/AGP/Kotlin compatibility remains a build maintenance risk.
 
 ### CP2 — Domain & persistence
 
@@ -115,9 +117,48 @@ Each checkpoint writes a local ignored report under `reports/checkpoints/` conta
 
 Operational test artifacts belong under `reports/test-results/`. Reports must never contain tokens or credentials.
 
-## 6. Git workflow
+## 6. Git & Commit Workflow
 
-Before checkpoint: `git status`, identify user changes, define file scope. During checkpoint: no unrelated refactor, no automatic commit. After report: stop and request review. Only after exact user approval `passed`: re-run required checks, inspect unstaged/staged diff, secret scan, stage checkpoint files only, commit with Indonesian convention, verify hash, stop. Never push unless requested.
+### Before each checkpoint
+
+- Run `git status`.
+- Identify existing changes.
+- Do not change files outside scope without a reason.
+- Do not delete user changes.
+
+### During a checkpoint
+
+- Implement only the active checkpoint scope.
+- Run relevant tests.
+- Write the checkpoint report.
+- Do not create an automatic commit.
+
+### After the user states `passed`
+
+1. Confirm acceptance criteria are met.
+2. Check build and test results.
+3. Check `git diff`.
+4. Check `git diff --cached`.
+5. Ensure no secrets or report files are staged.
+6. Stage only files related to the checkpoint.
+7. Create the commit.
+8. Verify the commit succeeded.
+9. Report the commit hash.
+10. Stop and wait for further instructions.
+
+If a required test fails, a secret is detected, or unrelated changes are unsafe, do not create an invalid commit. Explain the blocker and request a decision.
+
+Do not push to the remote unless explicitly requested.
+
+### Commit message convention
+
+Required format:
+
+```text
+<type>: <short description in English>
+```
+
+Use the type that matches the actual change: `chore`, `feat`, `fix`, `test`, or `docs`. Do not reuse the same commit message for different work.
 
 ## 7. Stop conditions
 
