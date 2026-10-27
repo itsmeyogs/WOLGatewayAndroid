@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** Checkpoint 3 UI structure implemented; gateway/network layers remain planned
+**Status:** CP6 REST API and API Settings wiring implemented; tunnel, background service, and root layers remain planned
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -38,7 +38,7 @@ Room entity/DAO/database, DataStore preferences, secure secret adapter, reposito
 
 ### Gateway
 
-Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP1 hanya menyediakan lifecycle skeleton; route dan product behavior masuk CP6.
+Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP6 menyediakan `/api/v1` health, device CRUD, status, dan wake routes. Settings mengatur bind/port serta start/stop melalui `GatewayServer`; token management tetap berada di secure-store boundary.
 
 ### WoL/network
 
@@ -51,6 +51,8 @@ Magic packet builder, UDP sender, discovery adapter, status checker, network int
 ### Android service
 
 Foreground service, notification, boot/network callbacks, lifecycle coordinator, start/stop command handling. Service memanggil controller; tidak memiliki business rule duplikat.
+
+CP6 belum memindahkan lifecycle ke foreground service. API server tetap dijalankan dari Settings dan akan di-host oleh coordinator/service pada CP9.
 
 ### Root
 
@@ -105,7 +107,8 @@ com.yihs.wolgateway
     │   │   └── form/DeviceFormScreen.kt
     │   ├── add_devices
     │   │   └── AddDevicesScreen.kt
-    │   └── settings/SettingsScreen.kt
+    │   ├── settings/SettingsScreen.kt
+    │   └── api_settings/ApiSettingsScreen.kt
     ├── component
     │   ├── DeviceListItem.kt
     │   ├── DeviceSearchBar.kt
@@ -142,7 +145,7 @@ Ktor memakai graceful shutdown dan `ApplicationStopped` cleanup. Foreground serv
 
 ## 6. API security boundary
 
-Auth middleware berjalan sebelum route sensitif. Token rotation atomic terhadap secure store. Error response tidak mengungkap apakah token/device internal tertentu ada bila tidak perlu. Health endpoint hanya mengembalikan status minimal.
+Auth middleware berjalan sebelum route sensitif. Token dibuat otomatis saat inisialisasi pertama atau disimpan dari custom input, lalu di-copy secara masked melalui halaman API; automatic mode dapat membuat token baru. State API dikelola terpisah oleh `ApiSettingsViewModel`; custom mode yang belum disimpan hanya draft dan dibuang saat navigasi keluar. Perbandingan token constant-time. Error response tidak mengungkap secret. AES-GCM encryption memakai IV yang dibuat Cipher/Keystore; IV disimpan bersama ciphertext untuk dekripsi. Health endpoint hanya mengembalikan status minimal. Bind default loopback; LAN bind merupakan opt-in.
 
 ## 7. Tunnel architecture decision
 

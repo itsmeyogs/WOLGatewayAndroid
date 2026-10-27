@@ -15,5 +15,6 @@
 local.properties
 
 # Operational checkpoint and test reports stay local.
+/reports/
 /reports/checkpoints/
 /reports/test-results/

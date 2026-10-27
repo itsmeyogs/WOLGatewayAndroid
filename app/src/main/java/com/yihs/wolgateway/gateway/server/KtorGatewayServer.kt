@@ -1,24 +1,54 @@
 package com.yihs.wolgateway.gateway.server
 
 import io.ktor.server.application.Application
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.install
+import kotlinx.serialization.json.Json
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
+import com.yihs.wolgateway.domain.repository.DeviceRepository
+import com.yihs.wolgateway.domain.usecase.CheckDeviceStatusUseCase
+import com.yihs.wolgateway.domain.usecase.WakeDeviceUseCase
+import com.yihs.wolgateway.gateway.auth.ApiTokenStore
+import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
+import com.yihs.wolgateway.gateway.routing.configureApiRoutes
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class KtorGatewayServer @Inject constructor() : GatewayServer {
+class KtorGatewayServer @Inject constructor(
+    private val repository: DeviceRepository,
+    private val tokenStore: ApiTokenStore,
+    private val wakeDevice: WakeDeviceUseCase,
+    private val checkDeviceStatus: CheckDeviceStatusUseCase,
+) : GatewayServer {
     private val lock = Any()
     private var engine: EmbeddedServer<*, *>? = null
 
     override var state: ServerState = ServerState.STOPPED
         private set
 
+    private var config: GatewayServerConfig = GatewayServerConfig()
+
+    override fun configure(config: GatewayServerConfig) {
+        synchronized(lock) {
+            check(state == ServerState.STOPPED) { "Stop the API server before changing configuration" }
+            this.config = config
+        }
+    }
+
     override fun start() {
         synchronized(lock) {
             if (state == ServerState.RUNNING) return
-            engine = embeddedServer(CIO, port = 0, module = Application::appModule)
+            engine = embeddedServer(CIO, host = config.bindAddress, port = config.port) {
+                install(ContentNegotiation) {
+                    json(Json { encodeDefaults = true; ignoreUnknownKeys = false })
+                }
+                configureApiErrorHandling()
+                configureApiRoutes(repository, tokenStore, wakeDevice, checkDeviceStatus)
+            }
                 .also { it.start(wait = false) }
             state = ServerState.RUNNING
         }
@@ -32,5 +62,3 @@ class KtorGatewayServer @Inject constructor() : GatewayServer {
         }
     }
 }
-
-private fun Application.appModule() = Unit

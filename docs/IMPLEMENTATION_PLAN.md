@@ -95,8 +95,8 @@ Acceptance: byte-level and target tests; packet result separated from target sta
 
 ### CP6 — Ktor API
 
-Implement versioned routes, DTOs, auth middleware, token management, validation/error envelope, repository integration, request limits/timeouts, and API docs.
-Acceptance: API integration/auth tests pass. No tunnel yet.
+**Status: PASS (user-approved); manual endpoint verification remains pending.** Implemented versioned routes, DTOs, auth middleware, Keystore-backed token management, validation/error envelope, repository/use-case integration, declared request-size limit, API docs, and dedicated Settings → API controls for server URL/start/stop/token actions. API state is isolated in `ApiSettingsViewModel`/`ApiSettingsUiState`. Token supports automatic generation, automatic refresh, or custom input; masked copy is available. Unsaved custom-mode drafts are discarded without replacing the saved automatic token. Token preview updates immediately after automatic refresh. Reveal and revoke are omitted. Fixed Android Keystore AES-GCM encryption by using the Cipher-generated IV rather than passing a caller-provided IV.
+Acceptance: automated API integration/auth tests pass; user approved CP6 after source verification. Manual endpoint execution remains pending. No tunnel yet. Evidence: `reports/checkpoints/CP6-rest-api.md` and `docs/API.md`.
 
 ### CP7 — Cloudflare Tunnel Technical Spike
 

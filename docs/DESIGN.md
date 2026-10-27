@@ -87,7 +87,7 @@ State header with icon + text + explanatory sentence. Token field masked by defa
 
 ### API & Gateway Settings
 
-Server on/off, bind address warning, port, API token status/generate/custom/rotate/revoke. Loopback is the visible default; explain LAN exposure before enabling non-loopback bind. Show API server status separately from tunnel status.
+Settings opens a dedicated API page containing an API server switch, a combined base URL card with copy/edit actions, and automatic/custom token modes. Tokens remain masked; copy, custom edit, and automatic refresh are available. Loopback is the visible default; explain LAN exposure before enabling non-loopback bind. Show API server status separately from tunnel status.
 
 ### Root & Background Settings
 
@@ -187,7 +187,7 @@ API server, tunnel, target device, and background service each get separate labe
 ### Feedback
 
 - Snackbar for non-destructive success/failure.
-- Dialog for delete, token removal, revoke, and potentially disruptive bind changes.
+- Dialog for delete and potentially disruptive bind changes.
 - Inline errors for form fields.
 - Snackbar for every save result: success, validation failure, duplicate MAC, or persistence failure.
 - Persistent notification only for active service; never include token or sensitive endpoint data.
@@ -244,7 +244,7 @@ API server, tunnel, target device, and background service each get separate labe
 
 - ARM64-only tunnel target.
 - Loopback-only API default; LAN exposure is opt-in and authenticated.
-- API token UI supports generated default, custom optional, rotate, and revoke.
+- API token UI defaults to an automatically generated encrypted token, with masked preview/copy, custom token editing, and automatic refresh; revoke and reveal are omitted. Unsaved custom selection is discarded on navigation.
 - Root Mode is hidden under advanced settings and deferred until Standard Mode is stable.
 - Tunnel domain/public hostname setup is deferred until local gateway stability.
 - Device list uses compact stacked rows; IP and MAC appear on separate unlabelled lines.

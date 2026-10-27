@@ -33,12 +33,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.res.stringResource
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
+import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val viewModel: DevicesViewModel = hiltViewModel()
+    val apiSettingsViewModel: ApiSettingsViewModel = hiltViewModel()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
@@ -52,6 +54,7 @@ fun AppNavHost() {
         Screen.Devices.route -> stringResource(R.string.screen_devices)
         Screen.AddDevices.route -> stringResource(R.string.screen_add_devices)
         Screen.Settings.route -> stringResource(R.string.screen_settings)
+        Screen.ApiSettings.route -> stringResource(R.string.screen_api_settings)
         Screen.Details.route -> stringResource(R.string.screen_device_details)
         Screen.Form.route -> if (selectedDeviceId == null) {
             stringResource(R.string.screen_add_device)
@@ -63,7 +66,14 @@ fun AppNavHost() {
     LaunchedEffect(Unit) {
         viewModel.events.collect { message ->
             snackbarHostState.showSnackbar(
-                context.resources.getString(message.resourceId, *message.arguments.toTypedArray()),
+                context.resources.getString(message.resourceId),
+            )
+        }
+    }
+    LaunchedEffect(Unit) {
+        apiSettingsViewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(
+                context.resources.getString(message.resourceId),
             )
         }
     }
@@ -129,6 +139,12 @@ fun AppNavHost() {
             onWake = viewModel::wakeDevice,
             onCheckStatus = viewModel::checkDeviceStatus,
             devicesViewModel = viewModel,
+            apiSettingsViewModel = apiSettingsViewModel,
+            onCopyText = { text ->
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                    as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("API setting", text))
+            },
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )
     }

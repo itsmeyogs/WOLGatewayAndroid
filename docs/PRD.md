@@ -75,6 +75,8 @@ Endpoint minimum:
 
 API memakai JSON, DTO validation, HTTP status code sesuai, error envelope konsisten, timeout, request size limit, repository yang sama dengan UI, dan tanpa operasi blocking di handler.
 
+CP6 implementation exposes the routes above under `/api/v1`. `/api/v1/health` returns minimal public health; all device routes require a Bearer token. Manual verification must cover success and failure status codes for each endpoint, automatic/custom token handling, automatic refresh, and server start/stop from Settings.
+
 ### FR-05 Tunnel
 
 Tunnel mendukung token, connect, disconnect, reconnect, auto-connect sesuai konfigurasi, health monitoring, last-connected time, error aman, token replacement, duplicate prevention, cleanup, dan status:
@@ -85,11 +87,11 @@ Cloudflare domain/public hostname ditunda sampai gateway lokal stabil. CP7 memva
 
 ### FR-06 Secret dan retry
 
-Tunnel/API token dibuat, diganti, dicabut, dan disimpan dengan Android Keystore-backed storage. DataStore hanya untuk preference non-secret. Retry memakai exponential backoff, cap, jitter, cancellation, dan satu supervisor aktif.
+Tunnel token dibuat, diganti, dicabut, dan disimpan dengan Android Keystore-backed storage. API token dibuat otomatis, dapat diganti dengan custom token atau automatic refresh, lalu disimpan dengan Android Keystore-backed storage. DataStore hanya untuk preference non-secret. Retry memakai exponential backoff, cap, jitter, cancellation, dan satu supervisor aktif.
 
 ### FR-07 Gateway lifecycle
 
-Pengguna dapat mengatur port, bind address, token, start/stop server, dan melihat status API. Default bind adalah loopback-only. LAN bind merupakan opt-in, menampilkan peringatan, dan mewajibkan authentication.
+Pengguna dapat mengatur port, bind address, token, start/stop server, dan melihat status API melalui Settings. Konfigurasi bind/port disimpan di DataStore; default bind adalah `127.0.0.1`, port default `8080`, dan server stopped sampai diaktifkan. LAN bind merupakan opt-in, menampilkan peringatan, dan mewajibkan authentication. Foreground-service hosting tetap CP9.
 
 ### FR-08 Background
 
@@ -105,7 +107,7 @@ Metode dapat dikombinasikan: ICMP, TCP port, dan service check. Polling dibatasi
 
 ### FR-12 API authentication token
 
-API menyediakan token random yang dibuat aplikasi sebagai default. Custom token dapat diatur pengguna dengan validasi format, panjang, dan keamanan minimum. Mendukung regenerate, rotate, dan revoke. Token disimpan pada Keystore-backed secure storage.
+API menyediakan token random yang dibuat aplikasi sebagai default. Settings memiliki halaman API terpisah yang mendukung automatic/custom token, masked copy, custom edit, dan automatic refresh. Token disimpan pada Keystore-backed secure storage.
 
 ### FR-11 Settings dan diagnostics
 
@@ -148,7 +150,7 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - **Tunnel reference:** `cloudflared-android` hanya referensi. Bila diperlukan, build binary sendiri dari source Cloudflare/cloudflared yang dipin.
 - **Status checks:** kombinasikan ICMP, TCP, dan service check; hasil harus menyimpan method, waktu, dan alasan.
 - **API bind:** loopback-only default; LAN bind opt-in dengan authentication.
-- **API token:** random generated default + custom token optional; rotate/revoke wajib.
+- **API token:** random generated default + custom token optional; masked copy and automatic refresh. Revoke tidak diperlukan.
 - **Root Mode:** ditunda sampai Standard Mode stabil; implementasi terakhir.
 
 ## 10. Resolved validation prerequisites

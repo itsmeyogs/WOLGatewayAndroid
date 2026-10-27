@@ -12,7 +12,9 @@ import com.yihs.wolgateway.ui.screen.device.detail.DeviceDetailsScreen
 import com.yihs.wolgateway.ui.screen.device.form.DeviceFormScreen
 import com.yihs.wolgateway.ui.screen.add_devices.AddDevicesScreen
 import com.yihs.wolgateway.ui.screen.settings.SettingsScreen
+import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsScreen
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
+import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 
 @Composable
 fun NavGraph(
@@ -21,6 +23,8 @@ fun NavGraph(
     onWake: (Long) -> Unit,
     onCheckStatus: (Long) -> Unit,
     devicesViewModel: DevicesViewModel,
+    apiSettingsViewModel: ApiSettingsViewModel,
+    onCopyText: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -43,7 +47,15 @@ fun NavGraph(
             )
         }
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onOpenApi = { navController.navigate(Screen.ApiSettings.route) },
+            )
+        }
+        composable(Screen.ApiSettings.route) {
+            ApiSettingsScreen(
+                viewModel = apiSettingsViewModel,
+                onCopyText = onCopyText,
+            )
         }
         composable(
             route = Screen.Details.route,

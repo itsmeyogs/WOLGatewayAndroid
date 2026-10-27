@@ -14,6 +14,9 @@ import com.yihs.wolgateway.data.repository.RoomDeviceRepository
 import com.yihs.wolgateway.domain.repository.DeviceRepository
 import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.KtorGatewayServer
+import com.yihs.wolgateway.gateway.server.GatewayServerConfig
+import com.yihs.wolgateway.gateway.auth.AndroidApiTokenStore
+import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.network.discovery.AndroidNetworkDiscovery
 import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import com.yihs.wolgateway.network.status.AndroidStatusChecker
@@ -52,6 +55,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideGatewayServer(server: KtorGatewayServer): GatewayServer = server
+
+    @Provides
+    @Singleton
+    fun provideApiTokenStore(store: AndroidApiTokenStore): ApiTokenStore = store
 
     @Provides
     @Singleton
