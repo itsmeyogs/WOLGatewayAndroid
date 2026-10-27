@@ -47,7 +47,6 @@
     <string name="device_content_description">Device %1$s</string>
     <string name="device_checked">Checked %1$s</string>
     <string name="device_not_checked">Not checked yet</string>
-    <string name="device_more_actions">More actions</string>
     <string name="status_online">ONLINE</string>
     <string name="status_offline">OFFLINE</string>
     <string name="status_unknown">UNKNOWN</string>
@@ -104,5 +103,13 @@
     <string name="event_device_duplicate">A device with this MAC address already exists</string>
     <string name="event_device_deleted">Device deleted</string>
     <string name="event_device_could_not_be_deleted">Device could not be deleted</string>
-    <string name="event_action_requires_engine">%1$s is available after the CP5 network engine</string>
+    <string name="event_wol_packet_sent">Wake packet sent locally; target status unchanged</string>
+    <string name="event_wol_packet_failed">Wake packet could not be sent</string>
+    <string name="event_status_checked">Device status checked</string>
+    <string name="event_network_action_failed">Network action failed</string>
+    <string name="details_last_check">Last check</string>
+    <string name="details_check_reason">Reason</string>
+    <string name="details_latency">Latency</string>
+    <string name="details_not_available">Not available</string>
+    <string name="details_latency_ms">%1$d ms</string>
 </resources>

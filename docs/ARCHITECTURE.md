@@ -64,6 +64,8 @@ Tetap satu module sampai kebutuhan build/runtime terbukti. Package awal:
 com.yihs.wolgateway
 ├── app
 │   └── WolGatewayApplication.kt
+├── di
+│   └── AppModule.kt
 ├── data
 │   ├── local
 │   │   └── entity

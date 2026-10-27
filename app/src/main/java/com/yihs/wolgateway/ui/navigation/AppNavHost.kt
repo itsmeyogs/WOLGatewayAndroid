@@ -45,8 +45,6 @@ fun AppNavHost() {
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
     var pendingDeleteDeviceId by rememberSaveable { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
-    val wakeLabel = stringResource(R.string.action_wake)
-    val checkStatusLabel = stringResource(R.string.action_check_status)
     val selectedDeviceId = backStackEntry?.arguments?.getLong("deviceId")
         ?.takeUnless { it == 0L || it == -1L }
 
@@ -128,12 +126,8 @@ fun AppNavHost() {
         NavGraph(
             navController = navController,
             startDestination = Screen.Devices.route,
-            onWake = { viewModel.acknowledgeUnavailableAction(wakeLabel) },
-            onCheckStatus = { viewModel.acknowledgeUnavailableAction(checkStatusLabel) },
-            onDeleteDevice = {
-                pendingDeleteDeviceId = it
-                showDeleteConfirmation = true
-            },
+            onWake = viewModel::wakeDevice,
+            onCheckStatus = viewModel::checkDeviceStatus,
             devicesViewModel = viewModel,
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )

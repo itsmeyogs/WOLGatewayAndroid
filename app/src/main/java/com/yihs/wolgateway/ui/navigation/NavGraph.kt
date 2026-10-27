@@ -20,7 +20,6 @@ fun NavGraph(
     startDestination: String,
     onWake: (Long) -> Unit,
     onCheckStatus: (Long) -> Unit,
-    onDeleteDevice: (Long) -> Unit,
     devicesViewModel: DevicesViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -34,9 +33,6 @@ fun NavGraph(
                 onAdd = { navController.navigate(Screen.AddDevices.route) },
                 onOpenDevice = { navController.navigate(Screen.Details.createRoute(it)) },
                 onWake = onWake,
-                onCheckStatus = onCheckStatus,
-                onEditDevice = { navController.navigate(Screen.Form.createRoute(it)) },
-                onDeleteDevice = onDeleteDevice,
                 viewModel = devicesViewModel,
             )
         }

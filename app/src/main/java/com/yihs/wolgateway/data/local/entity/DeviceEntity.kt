@@ -24,6 +24,7 @@ data class DeviceEntity(
     val statusCheckPort: Int,
     val status: DeviceStatus,
     val lastCheckAt: Long?,
+    val lastCheckLatencyMs: Long?,
     val lastCheckReason: String?,
     val lastWolResult: WolResult,
     val lastWolAt: Long?,

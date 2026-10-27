@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.yihs.wolgateway.data.local.entity.DeviceEntity
 
-@Database(entities = [DeviceEntity::class], version = 3, exportSchema = false)
+@Database(entities = [DeviceEntity::class], version = 4, exportSchema = false)
 @TypeConverters(DeviceConverters::class)
 abstract class GatewayDatabase : RoomDatabase() {
     abstract fun deviceDao(): DeviceDao

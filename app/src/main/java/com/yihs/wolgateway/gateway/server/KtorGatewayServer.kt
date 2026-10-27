@@ -18,7 +18,7 @@ class KtorGatewayServer @Inject constructor() : GatewayServer {
     override fun start() {
         synchronized(lock) {
             if (state == ServerState.RUNNING) return
-            engine = embeddedServer(CIO, port = 0, module = Application::foundationModule)
+            engine = embeddedServer(CIO, port = 0, module = Application::appModule)
                 .also { it.start(wait = false) }
             state = ServerState.RUNNING
         }
@@ -33,4 +33,4 @@ class KtorGatewayServer @Inject constructor() : GatewayServer {
     }
 }
 
-private fun Application.foundationModule() = Unit
+private fun Application.appModule() = Unit

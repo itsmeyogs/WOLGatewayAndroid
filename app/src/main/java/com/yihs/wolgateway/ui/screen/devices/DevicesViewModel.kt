@@ -9,6 +9,9 @@ import com.yihs.wolgateway.domain.repository.DuplicateDeviceException
 import com.yihs.wolgateway.domain.validation.DeviceField
 import com.yihs.wolgateway.domain.validation.InvalidDeviceException
 import com.yihs.wolgateway.domain.validation.ValidationMessage
+import com.yihs.wolgateway.domain.model.WolResult
+import com.yihs.wolgateway.domain.usecase.CheckDeviceStatusUseCase
+import com.yihs.wolgateway.domain.usecase.WakeDeviceUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,10 +22,16 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
     private val repository: DeviceRepository,
+    private val wakeDeviceUseCase: WakeDeviceUseCase,
+    private val checkDeviceStatusUseCase: CheckDeviceStatusUseCase,
 ) : ViewModel() {
     val devices: StateFlow<List<Device>> = repository.observeDevices().stateIn(
         scope = viewModelScope,
@@ -38,6 +47,13 @@ class DevicesViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<UiMessage>(extraBufferCapacity = 1)
     val events = _events.asSharedFlow()
+
+    private val _busyDeviceIds = MutableStateFlow<Set<Long>>(emptySet())
+    val busyDeviceIds: StateFlow<Set<Long>> = _busyDeviceIds.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    private val statusCheckMutex = Mutex()
 
     fun setSearchQuery(value: String) {
         _searchQuery.value = value
@@ -75,8 +91,66 @@ class DevicesViewModel @Inject constructor(
         }
     }
 
-    fun acknowledgeUnavailableAction(action: String) {
-        _events.tryEmit(UiMessage(R.string.event_action_requires_engine, listOf(action)))
+    fun wakeDevice(id: Long) {
+        runDeviceAction(id) {
+            val result = wakeDeviceUseCase(id)
+            _events.emit(
+                UiMessage(
+                    if (result.result == WolResult.PACKET_SENT) {
+                        R.string.event_wol_packet_sent
+                    } else {
+                        R.string.event_wol_packet_failed
+                    },
+                ),
+            )
+            if (result.result == WolResult.PACKET_SENT) {
+                listOf(5_000L, 15_000L, 30_000L).forEach { delayMs ->
+                    delay(delayMs)
+                    runCatching { checkDeviceStatusUseCase(id) }
+                }
+            }
+        }
+    }
+
+    fun checkDeviceStatus(id: Long) {
+        runDeviceAction(id) {
+            statusCheckMutex.withLock { checkDeviceStatusUseCase(id) }
+            _events.emit(UiMessage(R.string.event_status_checked))
+        }
+    }
+
+    fun refreshAllStatuses() {
+        if (_isRefreshing.value || devices.value.isEmpty()) return
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                devices.value.map { it.id }.forEach { id ->
+                    statusCheckMutex.withLock { checkDeviceStatusUseCase(id) }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                _events.emit(UiMessage(R.string.event_network_action_failed))
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    private fun runDeviceAction(id: Long, action: suspend () -> Unit) {
+        if (id in _busyDeviceIds.value) return
+        viewModelScope.launch {
+            _busyDeviceIds.value += id
+            try {
+                action()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                _events.emit(UiMessage(R.string.event_network_action_failed))
+            } finally {
+                _busyDeviceIds.value -= id
+            }
+        }
     }
 
 }

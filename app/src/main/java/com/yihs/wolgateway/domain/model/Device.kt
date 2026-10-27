@@ -11,6 +11,7 @@ data class Device(
     val statusCheckPort: Int = 3389,
     val status: DeviceStatus = DeviceStatus.UNKNOWN,
     val lastCheckAt: Long? = null,
+    val lastCheckLatencyMs: Long? = null,
     val lastCheckReason: String? = null,
     val lastWolResult: WolResult = WolResult.NOT_ATTEMPTED,
     val lastWolAt: Long? = null,

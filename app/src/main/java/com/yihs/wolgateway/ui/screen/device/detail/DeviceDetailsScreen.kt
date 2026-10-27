@@ -99,11 +99,20 @@ private fun DeviceDetailsContent(
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(onClick = onWake, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Filled.PowerSettingsNew, contentDescription = null)
-                Text(stringResource(R.string.action_wake), modifier = Modifier.padding(start = 6.dp))
+            if (device.status != com.yihs.wolgateway.domain.model.DeviceStatus.ONLINE) {
+                Button(onClick = onWake, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.PowerSettingsNew, contentDescription = null)
+                    Text(stringResource(R.string.action_wake), modifier = Modifier.padding(start = 6.dp))
+                }
             }
-            OutlinedButton(onClick = onCheck, modifier = Modifier.weight(1f)) {
+            OutlinedButton(
+                onClick = onCheck,
+                modifier = if (device.status == com.yihs.wolgateway.domain.model.DeviceStatus.ONLINE) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier.weight(1f)
+                },
+            ) {
                 Icon(Icons.Filled.Refresh, contentDescription = null)
                 Text(stringResource(R.string.action_check_status), modifier = Modifier.padding(start = 6.dp))
             }
@@ -122,6 +131,15 @@ private fun DeviceDetailsContent(
                 ParameterGroupTitle(stringResource(R.string.details_availability_check))
                 DetailLine(stringResource(R.string.details_method), device.statusCheckMethod.toDisplayLabel())
                 DetailLine(stringResource(R.string.details_target_port), device.statusCheckPort.toString())
+                DetailLine(
+                    stringResource(R.string.details_latency),
+                    device.lastCheckLatencyMs?.let { stringResource(R.string.details_latency_ms, it) }
+                        ?: stringResource(R.string.details_not_available),
+                )
+                DetailLine(
+                    stringResource(R.string.details_check_reason),
+                    device.lastCheckReason ?: stringResource(R.string.details_not_available),
+                )
             }
         }
 

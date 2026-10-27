@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -21,26 +24,32 @@ import com.yihs.wolgateway.ui.component.DeviceListItem
 import com.yihs.wolgateway.ui.component.DeviceSearchBar
 import com.yihs.wolgateway.ui.component.EmptyState
 import com.yihs.wolgateway.ui.component.GatewayStatusStrip
+import kotlinx.coroutines.delay
 
 @Composable
 fun DevicesScreen(
     onAdd: () -> Unit,
     onOpenDevice: (Long) -> Unit,
     onWake: (Long) -> Unit,
-    onCheckStatus: (Long) -> Unit,
-    onEditDevice: (Long) -> Unit,
-    onDeleteDevice: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
 ) {
     val devices by viewModel.devices.collectAsStateWithLifecycle()
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val filteredDevices = remember(devices, query) {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) devices else devices.filter {
             it.name.lowercase().contains(normalized) ||
                 it.ipAddress.contains(normalized) ||
                 it.macAddress.lowercase().contains(normalized)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            viewModel.devices.value.forEach { device -> viewModel.checkDeviceStatus(device.id) }
         }
     }
 
@@ -67,20 +76,25 @@ fun DevicesScreen(
                     modifier = Modifier.weight(1f),
                 )
             } else {
-                LazyColumn(
+                val refreshState = rememberPullToRefreshState()
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = viewModel::refreshAllStatuses,
+                    state = refreshState,
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(filteredDevices, key = { it.id }) { device ->
-                        DeviceListItem(
-                            device = device,
-                            onWake = { onWake(device.id) },
-                            onOpen = { onOpenDevice(device.id) },
-                            onCheckStatus = { onCheckStatus(device.id) },
-                            onEdit = { onEditDevice(device.id) },
-                            onDelete = { onDeleteDevice(device.id) },
-                        )
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(bottom = 96.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        items(filteredDevices, key = { it.id }) { device ->
+                            DeviceListItem(
+                                device = device,
+                                onWake = { onWake(device.id) },
+                                onOpen = { onOpenDevice(device.id) },
+                            )
+                        }
                     }
                 }
             }
