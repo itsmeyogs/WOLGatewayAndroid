@@ -31,7 +31,6 @@ class DeviceUiTest {
                 ),
                 onWake = { wakeClicked = true },
                 onOpen = {},
-                onMenu = {},
             )
         }
 

@@ -16,6 +16,8 @@ import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
 import com.yihs.wolgateway.gateway.routing.configureApiRoutes
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Singleton
 class KtorGatewayServer @Inject constructor(
@@ -27,21 +29,21 @@ class KtorGatewayServer @Inject constructor(
     private val lock = Any()
     private var engine: EmbeddedServer<*, *>? = null
 
-    override var state: ServerState = ServerState.STOPPED
-        private set
+    private val _state = MutableStateFlow(ServerState.STOPPED)
+    override val state = _state.asStateFlow()
 
     private var config: GatewayServerConfig = GatewayServerConfig()
 
     override fun configure(config: GatewayServerConfig) {
         synchronized(lock) {
-            check(state == ServerState.STOPPED) { "Stop the API server before changing configuration" }
+            check(_state.value == ServerState.STOPPED) { "Stop the API server before changing configuration" }
             this.config = config
         }
     }
 
     override fun start() {
         synchronized(lock) {
-            if (state == ServerState.RUNNING) return
+            if (_state.value == ServerState.RUNNING) return
             engine = embeddedServer(CIO, host = config.bindAddress, port = config.port) {
                 install(ContentNegotiation) {
                     json(Json { encodeDefaults = true; ignoreUnknownKeys = false })
@@ -50,7 +52,7 @@ class KtorGatewayServer @Inject constructor(
                 configureApiRoutes(repository, tokenStore, wakeDevice, checkDeviceStatus)
             }
                 .also { it.start(wait = false) }
-            state = ServerState.RUNNING
+            _state.value = ServerState.RUNNING
         }
     }
 
@@ -58,7 +60,7 @@ class KtorGatewayServer @Inject constructor(
         synchronized(lock) {
             engine?.stop(gracePeriodMillis = 1_000, timeoutMillis = 2_000)
             engine = null
-            state = ServerState.STOPPED
+            _state.value = ServerState.STOPPED
         }
     }
 }

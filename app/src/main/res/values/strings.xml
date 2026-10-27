@@ -28,6 +28,7 @@
 
     <string name="gateway_state">Gateway state</string>
     <string name="gateway_api">API</string>
+    <string name="gateway_api_running">Running</string>
     <string name="gateway_tunnel">Tunnel</string>
     <string name="gateway_service">Service</string>
     <string name="gateway_api_stopped">Stopped</string>

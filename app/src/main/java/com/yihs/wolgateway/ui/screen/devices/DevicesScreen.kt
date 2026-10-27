@@ -37,6 +37,7 @@ fun DevicesScreen(
     val devices by viewModel.devices.collectAsStateWithLifecycle()
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val gatewayState by viewModel.gatewayState.collectAsStateWithLifecycle()
     val filteredDevices = remember(devices, query) {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) devices else devices.filter {
@@ -57,7 +58,7 @@ fun DevicesScreen(
         modifier = modifier.fillMaxSize().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-            GatewayStatusStrip(modifier = Modifier.padding(top = 12.dp))
+            GatewayStatusStrip(serverState = gatewayState, modifier = Modifier.padding(top = 12.dp))
             DeviceSearchBar(query, viewModel::setSearchQuery)
             if (devices.isEmpty()) {
                 EmptyState(

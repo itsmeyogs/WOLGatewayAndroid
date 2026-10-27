@@ -13,9 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.yihs.wolgateway.R
+import com.yihs.wolgateway.gateway.server.ServerState
 
 @Composable
-fun GatewayStatusStrip(modifier: Modifier = Modifier) {
+fun GatewayStatusStrip(serverState: ServerState, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -24,7 +25,13 @@ fun GatewayStatusStrip(modifier: Modifier = Modifier) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.gateway_state), style = MaterialTheme.typography.titleSmall)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                GatewayStatus(stringResource(R.string.gateway_api), stringResource(R.string.gateway_api_stopped))
+                GatewayStatus(
+                    stringResource(R.string.gateway_api),
+                    stringResource(
+                        if (serverState == ServerState.RUNNING) R.string.gateway_api_running
+                        else R.string.gateway_api_stopped,
+                    ),
+                )
                 GatewayStatus(stringResource(R.string.gateway_tunnel), stringResource(R.string.gateway_tunnel_off))
                 GatewayStatus(stringResource(R.string.gateway_service), stringResource(R.string.gateway_service_standard))
             }

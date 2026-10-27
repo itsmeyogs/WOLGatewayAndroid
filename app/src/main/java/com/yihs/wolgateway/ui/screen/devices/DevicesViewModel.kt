@@ -26,13 +26,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.yihs.wolgateway.gateway.server.GatewayServer
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
     private val repository: DeviceRepository,
     private val wakeDeviceUseCase: WakeDeviceUseCase,
     private val checkDeviceStatusUseCase: CheckDeviceStatusUseCase,
+    gatewayServer: GatewayServer,
 ) : ViewModel() {
+    val gatewayState = gatewayServer.state
+
     val devices: StateFlow<List<Device>> = repository.observeDevices().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),

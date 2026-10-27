@@ -49,7 +49,7 @@ class ApiSettingsViewModel @Inject constructor(
             _state.value = ApiSettingsUiState(
                 bindAddress = values[BIND_ADDRESS] ?: ApiSettingsUiState.DEFAULT_BIND_ADDRESS,
                 port = (values[PORT] ?: ApiSettingsUiState.DEFAULT_PORT).toString(),
-                serverState = gatewayServer.state,
+                serverState = gatewayServer.state.value,
                 tokenMode = savedTokenMode,
                 tokenPreview = maskToken(token),
                 isLoading = false,
@@ -92,7 +92,7 @@ class ApiSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             gatewayServer.stop()
             savePreferences(serverEnabled = false)
-            _state.value = _state.value.copy(serverState = gatewayServer.state)
+            _state.value = _state.value.copy(serverState = gatewayServer.state.value)
             _events.emit(ApiSettingsMessage(R.string.event_api_server_stopped))
         }
     }
@@ -195,7 +195,7 @@ class ApiSettingsViewModel @Inject constructor(
             _state.value = _state.value.copy(
                 bindAddress = bind,
                 port = port.toString(),
-                serverState = gatewayServer.state,
+                serverState = gatewayServer.state.value,
             )
             _events.emit(ApiSettingsMessage(if (startAfterSave) R.string.event_api_server_started else R.string.event_api_configuration_saved))
         } catch (_: Exception) {
