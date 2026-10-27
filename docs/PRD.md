@@ -1,6 +1,6 @@
 # Product Requirements Document — WoL Gateway
 
-**Status:** Draft for approval — Checkpoint 1 foundation implemented
+**Status:** Draft for approval — Checkpoint 3 device UI implemented
 **Tanggal:** 2026-10-26
 **Package:** `com.yihs.wolgateway`
 
@@ -46,13 +46,13 @@ Membedakan masalah target PC, Android gateway, Ktor API, tunnel, permission, dan
 
 ### FR-01 Device management
 
-Dashboard menampilkan nama, IP, MAC, status `ONLINE`/`OFFLINE`/`UNKNOWN`, waktu pemeriksaan, dan hasil WoL terakhir. Mendukung search nama/IP/MAC, refresh, add, edit, detail, wake, status check, delete dengan konfirmasi, loading, empty, error, serta success feedback.
+Devices menampilkan nama, IP, MAC, status `ONLINE`/`OFFLINE`/`UNKNOWN`, waktu pemeriksaan, dan hasil WoL terakhir. Mendukung search nama/IP/MAC, refresh, add, edit, detail, wake, status check, delete dengan konfirmasi, loading, empty, error, serta success feedback. Settings diakses dari action app bar Devices; Add Devices diakses dari FAB atau empty-state add action.
 
 `ONLINE` berarti pemeriksaan yang dikonfigurasi memperoleh bukti konektivitas. `OFFLINE` hanya digunakan jika metode pemeriksaan memperoleh bukti kuat target tidak tersedia. `UNKNOWN` digunakan jika bukti tidak memadai, termasuk ICMP yang gagal atau diblokir.
 
 ### FR-02 Discovery dan registration
 
-Discovery standar membaca interface/subnet yang tersedia, dapat dimulai/dihentikan, memiliki timeout, deduplikasi, hostname best-effort, dan tidak menganggap MAC selalu tersedia. Manual registration selalu tersedia dengan validasi nama, IP, MAC, broadcast, dan port WoL default `9`.
+Add Devices otomatis membaca interface/subnet IPv4 yang tersedia saat screen dibuka, memindai host yang reachable dengan timeout, menampilkan hostname best-effort dan common TCP ports, serta mendeduplikasi hasil. MAC tidak diasumsikan tersedia. Manual registration selalu tersedia dengan validasi nama, IP, MAC, broadcast, dan port WoL default `9`.
 
 ### FR-03 WoL engine
 
@@ -128,8 +128,8 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - Min SDK ditetapkan `29` (Android 10), sesuai device ARM64 non-root yang tersedia dan baseline runtime tunnel yang akan divalidasi.
 - Build reproducible dan dependency versions dipin melalui version catalog.
 - Dependency injection memakai Hilt; Application, Activity, ViewModel, database, preferences, dan repository bindings mengikuti Hilt component scope.
-- Struktur kode memisahkan setiap top-level class/component ke file dan package sesuai tanggung jawab; Activity tidak memuat layout screen.
-- UI accessible, scrollable, font scaling, light/dark theme.
+- Struktur kode memisahkan setiap top-level class/component ke file dan package sesuai tanggung jawab; Activity tidak memuat layout screen. UI pages berada di `ui/screen/devices`, `ui/screen/add_devices`, `ui/screen/device/detail`, `ui/screen/device/form`, dan `ui/screen/settings`; reusable components berada di `ui/component`.
+- UI accessible, scrollable, font scaling, light/dark theme. Device Details, Settings, and add/edit forms must remain usable when content exceeds the viewport. User-facing copy is localized through Android string resources.
 - Resource cleanup saat stop, cancellation, process exit, network change, dan app shutdown.
 - Diagnostics membedakan automatic test, emulator, dan real device.
 
@@ -157,5 +157,5 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - **Fixture lokal:** Android ARM64 + Ktor + self-built official Cloudflare runtime; uji forwarding, health check, dan authentication sebelum domain eksternal.
 - **Fixture eksternal:** subdomain pengujian, tunnel aktif, API health/authentication lulus dari jaringan berbeda.
 - **Status default:** ICMP aktif + TCP aktif pada port `3389` (Windows RDP); port tetap configurable per device.
-- **Polling:** dashboard aktif auto-check tiap 60 detik; manual check selalu tersedia; background service tidak polling target; post-Wake checks pada 5/15/30 detik.
+- **Polling:** screen Devices aktif auto-check tiap 60 detik; manual check selalu tersedia; background service tidak polling target; post-Wake checks pada 5/15/30 detik.
 - **Runtime provenance:** `cloudflared-android` reference only; production runtime hanya self-built dari official Cloudflare source.

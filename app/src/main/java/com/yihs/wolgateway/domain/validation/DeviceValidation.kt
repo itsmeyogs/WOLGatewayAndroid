@@ -14,7 +14,7 @@ enum class DeviceField {
 
 data class ValidationIssue(
     val field: DeviceField,
-    val message: String,
+    val message: ValidationMessage,
 )
 
 class InvalidDeviceException(
@@ -26,24 +26,24 @@ object DeviceValidator {
 
     fun validate(device: Device): List<ValidationIssue> = buildList {
         if (device.name.trim().isEmpty()) {
-            add(ValidationIssue(DeviceField.NAME, "Name is required"))
+            add(ValidationIssue(DeviceField.NAME, ValidationMessage.NAME_REQUIRED))
         } else if (device.name.trim().length > 100) {
-            add(ValidationIssue(DeviceField.NAME, "Name must be at most 100 characters"))
+            add(ValidationIssue(DeviceField.NAME, ValidationMessage.NAME_TOO_LONG))
         }
         if (!isIpAddress(device.ipAddress)) {
-            add(ValidationIssue(DeviceField.IP_ADDRESS, "IP address is invalid"))
+            add(ValidationIssue(DeviceField.IP_ADDRESS, ValidationMessage.IP_ADDRESS_INVALID))
         }
         if (!macPattern.matches(device.macAddress.trim())) {
-            add(ValidationIssue(DeviceField.MAC_ADDRESS, "MAC address is invalid"))
+            add(ValidationIssue(DeviceField.MAC_ADDRESS, ValidationMessage.MAC_ADDRESS_INVALID))
         }
         if (!isIpAddress(device.broadcastAddress)) {
-            add(ValidationIssue(DeviceField.BROADCAST_ADDRESS, "Broadcast address is invalid"))
+            add(ValidationIssue(DeviceField.BROADCAST_ADDRESS, ValidationMessage.BROADCAST_ADDRESS_INVALID))
         }
         if (device.wolPort !in 1..65535) {
-            add(ValidationIssue(DeviceField.WOL_PORT, "WoL port must be between 1 and 65535"))
+            add(ValidationIssue(DeviceField.WOL_PORT, ValidationMessage.WOL_PORT_INVALID))
         }
         if (device.statusCheckPort !in 1..65535) {
-            add(ValidationIssue(DeviceField.STATUS_CHECK_PORT, "Status-check port must be between 1 and 65535"))
+            add(ValidationIssue(DeviceField.STATUS_CHECK_PORT, ValidationMessage.STATUS_CHECK_PORT_INVALID))
         }
     }
 

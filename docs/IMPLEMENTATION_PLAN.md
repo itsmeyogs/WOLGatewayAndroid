@@ -8,7 +8,7 @@
 
 - Existing single Android module `:app`.
 - Package/application ID `com.yihs.wolgateway`.
-- Existing Compose template, now organized into separate navigation/screen/component files.
+- Existing Compose template, now organized into feature-based navigation/screen/component files. The active screen tree is `devices`, `add_devices`, `device/detail`, `device/form`, and `settings`; obsolete screen folders are removed.
 - AGP `9.4.1`, Gradle `9.6.0`, Kotlin `2.4.21`, Compose BOM `2026.09.00`.
 - compile/target SDK `37`, min SDK `29` (Android 10).
 - Existing dependency set lacks Hilt, KSP, Ktor, Room, DataStore, and secure storage.
@@ -34,7 +34,7 @@ Do not add a new library when JDK/Kotlin/Android platform APIs or an installed d
 | CP1 | Build/DI/API/database foundation | Build + DI works | assemble, unit, lint |
 | CP2 | Domain/persistence | CRUD valid | validation, Room, repository |
 | CP3 | Device UI | CRUD UX works | Compose UI/navigation |
-| CP4 | Discovery | real-device discovery/manual fallback | unit + device |
+| CP4 | Add Devices discovery | real-device discovery/manual fallback | unit + device |
 | CP5 | WoL/status | real target behavior | packet + socket + device |
 | CP6 | REST API | auth/API contract | Ktor integration |
 | CP7 | Tunnel technical spike | feasibility proven | ARM64/end-to-end |
@@ -66,14 +66,24 @@ Implement Device model, statuses, WoL result, validation, Room schema/DAO/reposi
 Acceptance: CRUD, invalid input, duplicate behavior, and Flow consistency pass.
 No UI/network scan/API yet.
 
-### CP3 — Device UI
+### CP3 — Device UI — executed
 
-Implement Dashboard, Detail, Add/Edit, delete confirmation, search, states, NavigationBar (`Devices`, `Discovery`, `Settings`), compact stacked device rows, and reusable components per `docs/DESIGN.md`. Dashboard auto-checks every 60 seconds while visible; manual check remains available; post-Wake checks run at 5/15/30 seconds.
+Implement Devices, device detail, device add/edit, delete confirmation, search, states, compact stacked device rows, and reusable components per `docs/DESIGN.md`. Use feature-based Kotlin structure: `ui/screen/devices`, `ui/screen/device/detail`, `ui/screen/device/form`, `ui/screen/add_devices`, and `ui/screen/settings`. Folder/package names use `snake_case`; files, classes, objects, and interfaces use `PascalCase`; functions, properties, variables, and parameters use `camelCase`; constants use `SCREAMING_SNAKE_CASE`. Follow the BLScanner navigation pattern: `AppNavHost` owns the single `Scaffold`, derives `currentRoute` from `currentBackStackEntryAsState()`, and renders the top app bar; `NavGraph` only declares `NavHost` routes and route arguments; `Screen` owns route identity while localized titles are resolved from `strings.xml`. No bottom `NavigationBar`: Settings is reached from the Devices app-bar action; Add Devices is reached from the Devices FAB and empty-state add action; manual registration is reached from Add Devices. Screen composables render content only. Page titles belong to the app bar; content has no duplicate headings. Device Details, Settings, and forms must scroll when content exceeds the viewport; lists use `LazyColumn`. All user-facing labels, actions, content descriptions, validation copy, and snackbar messages belong in `app/src/main/res/values/strings.xml`. Devices auto-checks every 60 seconds while visible; manual check remains available; post-Wake checks run at 5/15/30 seconds.
 Acceptance: UI CRUD works and accessibility/state behavior is tested.
 
-### CP4 — Discovery
+Implemented screen ownership:
 
-Implement standard non-root discovery with cancellation, timeout, dedupe, hostname best-effort, and manual fallback.
+- `ui/screen/devices`: device list and `DevicesViewModel`.
+- `ui/screen/add_devices`: local-network scan and manual-registration entry.
+- `ui/screen/device/detail`: device detail page.
+- `ui/screen/device/form`: add/edit device page.
+- `ui/screen/settings`: gateway settings page.
+- `ui/component`: reusable UI components shared by feature pages.
+- `ui/navigation`: app shell, route model, and route declarations.
+
+### CP4 — Add Devices discovery
+
+Implement Add Devices automatic non-root discovery on screen entry with cancellation, timeout, dedupe, hostname best-effort, reachable-host results, and manual fallback.
 Acceptance: real Wi-Fi test or explicitly BLOCKED with evidence.
 
 ### CP5 — WoL & status

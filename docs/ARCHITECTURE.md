@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** Proposed — Checkpoint 1 foundation implemented
+**Status:** Checkpoint 3 UI structure implemented; gateway/network layers remain planned
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -24,7 +24,9 @@ flowchart LR
 
 ### Presentation
 
-Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. Tidak memuat socket, DAO, atau business rule.
+Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. `AppNavHost` owns the single app-level `Scaffold` plus route chrome (app bar, FAB, snackbar host); no bottom navigation bar is used. App-bar titles are the only page headings. Screen composables render content only and must not create nested `Scaffold` instances. UI styling uses warm surfaces, deep navy ink, restrained cyan actions, and semantic status accents. Tidak memuat socket, DAO, atau business rule.
+
+User-facing text is centralized in `app/src/main/res/values/strings.xml`. Composables resolve text with `stringResource`; ViewModel events carry string resource IDs and arguments rather than localized text. Screen content that can exceed the viewport uses a scroll container (`LazyColumn` or `verticalScroll`); app-bar titles remain outside screen content.
 
 ### Domain
 
@@ -54,7 +56,7 @@ Foreground service, notification, boot/network callbacks, lifecycle coordinator,
 
 `RootCapabilityDetector`, `RootDiagnosticsAdapter`, optional supervisor/discovery adapter. Interface berada di domain/tunnel boundary; implementasi root tidak bocor ke UI atau repository.
 
-## 3. Proposed package layout
+## 3. Package layout
 
 Tetap satu module sampai kebutuhan build/runtime terbukti. Package awal:
 
@@ -93,12 +95,25 @@ com.yihs.wolgateway
     ├── navigation
     │   └── AppNavHost.kt
     ├── screen
-    │   └── dashboard
-    │       ├── DashboardScreen.kt
-    │       └── FoundationViewModel.kt
+    │   ├── devices
+    │   │   ├── DevicesScreen.kt
+    │   │   └── DevicesViewModel.kt
+    │   ├── device
+    │   │   ├── detail/DeviceDetailsScreen.kt
+    │   │   └── form/DeviceFormScreen.kt
+    │   ├── add_devices
+    │   │   └── AddDevicesScreen.kt
+    │   └── settings/SettingsScreen.kt
     ├── component
+    │   ├── DeviceListItem.kt
+    │   ├── DeviceSearchBar.kt
+    │   ├── DeviceStatusIndicator.kt
+    │   ├── EmptyState.kt
+    │   └── GatewayStatusStrip.kt
     └── theme
 ```
+
+The current `ui/screen` tree contains only feature pages: `devices`, `add_devices`, `device/detail`, `device/form`, and `settings`. Obsolete `dashboard`, `detail`, and `adddevices` directories are removed; empty screen directories are not retained.
 
 Jangan membuat module/abstraction tambahan sebelum ada kebutuhan nyata.
 

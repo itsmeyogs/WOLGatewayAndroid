@@ -1,13 +1,13 @@
 # UI/UX Design — WoL Gateway
 
-**Status:** Approved-for-review specification — CP1 foundation implemented; UI implementation deferred to CP3
+**Status:** Approved specification — CP3 UI implementation completed; CP4/CP5 behavior remains deferred
 **Tanggal:** 2026-10-26
 
 ## 1. Design direction
 
 ### Tone
 
-Industrial network console: tenang, padat informasi, utilitarian, bukan dashboard dekoratif. Fokus visual pada “apa yang dapat dijalankan sekarang” dan “bukti status apa yang tersedia”.
+Industrial network console: tenang, padat informasi, utilitarian, bukan dekorasi dashboard. Fokus visual pada “apa yang dapat dijalankan sekarang” dan “bukti status apa yang tersedia”.
 
 ### Principles
 
@@ -23,28 +23,29 @@ Industrial network console: tenang, padat informasi, utilitarian, bukan dashboar
 
 ```mermaid
 flowchart TD
-    Dashboard[Dashboard / Devices]
-    Dashboard --> Details[Device Details]
-    Dashboard --> Form[Add/Edit Device]
-    Dashboard --> Discovery[Device Discovery]
-    Dashboard --> Tunnel[Tunnel Management]
-    Dashboard --> Settings[API & Gateway Settings]
-    Dashboard --> Background[Root & Background Settings]
-    Dashboard --> Diagnostics[Diagnostics]
+    Devices[Devices]
+    Devices --> Details[Device Details]
+    Devices --> Form[Add/Edit Device]
+    Devices --> AddDevices[Add Devices]
+    Devices --> Tunnel[Tunnel Management]
+    Devices --> Settings[API & Gateway Settings]
+    Devices --> Background[Root & Background Settings]
+    Devices --> Diagnostics[Diagnostics]
     Details --> Form
 ```
 
 ### Primary navigation
 
-- Phone and tablet use the same `NavigationBar`: `Devices`, `Discovery`, `Settings`.
+- No bottom `NavigationBar` is used. The Devices app-bar action opens Settings; the Devices FAB and empty-state add action open Add Devices.
+- Add Devices starts a local-network scan on entry, shows reachable results directly, and always provides manual registration.
 - `Settings` groups Tunnel, API/Gateway, Background/Root, and Diagnostics.
-- Dashboard remains the start destination.
+- Devices remains the start destination.
 
 ## 3. Screen inventory
 
-### Dashboard / Devices
+### Devices
 
-Top app bar: title “Devices”, search action, overflow/settings action. Below: gateway summary strip showing API, tunnel, and service as separate labeled indicators. Main content is a `LazyColumn` of device rows/cards. FAB or trailing add action opens registration.
+Top app bar: title “Devices”, settings action. Below: gateway summary strip showing API, tunnel, and service as separate labeled indicators. Main content is a `LazyColumn` of device rows/cards. FAB and empty-state add action open Add Devices; Add Devices owns network scan and manual registration.
 
 Device item hierarchy: name + status label, IP on its own line, MAC on its own line, last check time, primary Wake action, secondary overflow for status/detail/edit/delete. Do not show status-check method or port in the item. Swipe actions are optional; never replace accessible explicit actions.
 
@@ -62,17 +63,23 @@ Device item uses a compact stacked row rather than a wide horizontal metadata la
 
 IP and MAC may wrap on narrow screens or with font scaling; neither is forcibly truncated. Port and check method remain available on Device Details.
 
+### Add Devices
+
+Top app bar title is “Add Devices”; content has no duplicate page heading. On entry, scan the active IPv4 subnet automatically and show reachable hosts in a list with address, best-effort hostname, and open common TCP ports. Show scanning, empty, and failure states. Manual registration remains available as a persistent bottom action.
+
 ### Device Discovery
 
-Network context header: active interface/subnet and permission note. Scan/stop control uses one prominent action. Results show IP, hostname if known, MAC only when obtained, source/method, and register action. Manual registration remains visible below or via clear secondary action.
+Network context: active interface/subnet and permission note. Add Devices scans automatically on entry. Results show IP, hostname if known, reachable common TCP ports, and register action when persistence is added. Manual registration remains visible as a primary fallback.
 
 ### Device Details
 
 Header: device name, status label, address metadata. Action group: Wake, Check status, Edit. Sections: last check/method, last WoL result, network parameters, safe troubleshooting explanation. Show “packet sent” separately from “target online”.
 
+Device Details uses a vertically scrollable content column. Network parameters are grouped into Wake-on-LAN and Availability check sections with aligned labels and values; explanatory status text stays in a separate tonal surface.
+
 ### Add/Edit Device
 
-Scrollable form with name, IP, MAC, broadcast, WoL port, optional status-check method/port. Inline validation, examples, keyboard-safe layout, save disabled only when invalid/unfinished state is clear. MAC manual entry is first-class, not an error fallback hidden behind discovery.
+Scrollable form with name, IP, MAC, broadcast, WoL port, optional status-check method/port. App-bar title is “Add device” for a new record and “Edit device” for an existing record. Inline validation, examples, keyboard-safe layout, save disabled only when invalid/unfinished state is clear. MAC manual entry is first-class, not an error fallback hidden behind discovery.
 
 ### Tunnel Management
 
@@ -159,7 +166,7 @@ All interactive icons need content descriptions and at least 48 dp touch target.
 - Wake action shows progress, then `PACKET_SENT` or failure. Never changes target status to online automatically.
 - Combined checks show the method(s), timestamp, and reason. A single failed ICMP check does not render the target offline.
 - Windows target default shows ICMP + TCP `3389`; explain that disabled/blocked RDP produces `UNKNOWN`. Port overrides remain visible in device details.
-- Dashboard auto-checks visible devices every 60 seconds. Auto-check pauses when Dashboard is not visible.
+- Devices auto-checks visible devices every 60 seconds. Auto-check pauses when Devices is not visible.
 - Manual `Check status` is always available from the device overflow/details action.
 - After Wake, one-shot checks run at 5, 15, and 30 seconds, then stop.
 - Background service does not poll target devices.
@@ -187,8 +194,10 @@ API server, tunnel, target device, and background service each get separate labe
 ## 7. Responsive/accessibility rules
 
 - All screens scroll, especially forms and diagnostics.
+- Device Details and Settings use `verticalScroll`; device and Add Devices lists use `LazyColumn`; the form remains keyboard-safe and vertically scrollable.
 - `WindowSizeClass` determines rail/drawer/compact layout.
 - Keyboard uses `adjustResize` and focus/scroll behavior.
+- User-facing copy belongs in Android `strings.xml`; no hardcoded UI labels, actions, content descriptions, or snackbar messages in screen code.
 - Support font scaling without clipped status labels.
 - Contrast must meet accessible text contrast target.
 - Status uses icon + text + optional shape, never color only.
@@ -202,6 +211,8 @@ API server, tunnel, target device, and background service each get separate labe
 - ViewModels expose `StateFlow<UiState>` and event methods; production ViewModels use Hilt constructor injection and `hiltViewModel()` retrieval.
 - Use lifecycle-aware collection.
 - `MainActivity` hanya menjadi host lifecycle; navigation, screen, dan reusable component berada pada file/package masing-masing.
+- Screen files follow page ownership: `ui/screen/devices`, `ui/screen/add_devices`, `ui/screen/device/detail`, `ui/screen/device/form`, and `ui/screen/settings`. Obsolete dashboard/detail/add-device folders are not part of the project structure.
+- Gunakan single-scaffold pattern: `AppNavHost` menjadi pemilik tunggal `Scaffold`, top app bar, FAB, dan snackbar host. Tidak ada bottom `NavigationBar`; screen composables hanya menerima state/event lalu merender content; jangan membuat nested `Scaffold`.
 - Setiap Compose screen/component memiliki file sendiri; preview ditempatkan bersama component yang dipreview.
 - Keep previews with representative online/offline/unknown/loading/error states.
 - Reuse tokens/components; no screen-local duplicated status colors.
@@ -237,11 +248,12 @@ API server, tunnel, target device, and background service each get separate labe
 - Tunnel domain/public hostname setup is deferred until local gateway stability.
 - Device list uses compact stacked rows; IP and MAC appear on separate unlabelled lines.
 - Device items show last-check time only; method and port remain in Device Details.
-- Dashboard auto-check interval is 60 seconds with manual check and post-Wake checks at 5/15/30 seconds.
+- Devices auto-check interval is 60 seconds with manual check and post-Wake checks at 5/15/30 seconds.
 
 ## 11. Finalized implementation notes
 
-- Palette: static navy + cyan; no dynamic color dependency for brand/status consistency.
-- Typography: Material default; no new font dependency.
+- Palette: static elegant industrial-console palette: warm off-white surfaces, deep navy ink, restrained cyan action, desaturated teal positive, rust negative, slate unknown; no dynamic color dependency for brand/status consistency.
+- Typography: Material default with explicit hierarchy, readable metadata, and no new font dependency.
+- Styling direction: elegant and clean operational UI; tonal surfaces over repeated cards, restrained accents, compact stacked device rows, and minimal chrome.
 - Status-check configuration: per-device advanced settings, with ICMP + TCP 3389 defaults.
 - Accessibility: verify contrast for navy/cyan in light and dark themes during CP3.

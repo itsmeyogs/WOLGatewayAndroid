@@ -1,3 +1,104 @@
 <resources>
     <string name="app_name">WOLGateway</string>
+    <string name="screen_devices">Devices</string>
+    <string name="screen_add_devices">Add Devices</string>
+    <string name="screen_settings">Settings</string>
+    <string name="screen_device_details">Device details</string>
+    <string name="screen_add_device">Add device</string>
+    <string name="screen_edit_device">Edit device</string>
+
+    <string name="action_back">Back</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_edit_device">Edit device</string>
+    <string name="action_delete_device">Delete device</string>
+    <string name="action_add_device">Add device</string>
+    <string name="action_wake">Wake</string>
+    <string name="action_check_status">Check status</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save_device">Save device</string>
+    <string name="action_saving">Saving…</string>
+    <string name="action_clear_search">Clear search</string>
+    <string name="action_add_manually">Add manually</string>
+
+    <string name="dialog_delete_device_title">Delete device?</string>
+    <string name="dialog_delete_device_message">This removes the saved device configuration. The target PC is not affected.</string>
+
+    <string name="gateway_state">Gateway state</string>
+    <string name="gateway_api">API</string>
+    <string name="gateway_tunnel">Tunnel</string>
+    <string name="gateway_service">Service</string>
+    <string name="gateway_api_stopped">Stopped</string>
+    <string name="gateway_tunnel_off">Off</string>
+    <string name="gateway_service_standard">Standard</string>
+    <string name="gateway_configuration">Gateway configuration</string>
+    <string name="settings_api_server">API server</string>
+    <string name="settings_api_server_value">Loopback only · Stopped</string>
+    <string name="settings_tunnel">Tunnel</string>
+    <string name="settings_tunnel_value">Not configured</string>
+    <string name="settings_background">Background</string>
+    <string name="settings_background_value">Standard Mode</string>
+    <string name="settings_diagnostics">Diagnostics</string>
+    <string name="settings_diagnostics_value">Available after gateway services are configured</string>
+
+    <string name="search_devices_label">Search devices</string>
+    <string name="search_devices_placeholder">Search name, IP, or MAC</string>
+    <string name="device_content_description">Device %1$s</string>
+    <string name="device_checked">Checked %1$s</string>
+    <string name="device_not_checked">Not checked yet</string>
+    <string name="device_more_actions">More actions</string>
+    <string name="status_online">ONLINE</string>
+    <string name="status_offline">OFFLINE</string>
+    <string name="status_unknown">UNKNOWN</string>
+    <string name="devices_empty_title">No devices registered</string>
+    <string name="devices_empty_message">Add a PC manually, then configure its network details.</string>
+    <string name="devices_no_match_title">No matching devices</string>
+    <string name="devices_no_match_message">Try another name, IP address, or MAC address.</string>
+
+    <string name="form_field_name">Name</string>
+    <string name="form_field_ip_address">IP address</string>
+    <string name="form_field_mac_address">MAC address</string>
+    <string name="form_field_broadcast_address">Broadcast address</string>
+    <string name="form_field_wol_port">WoL port</string>
+    <string name="form_mac_placeholder">AA:BB:CC:DD:EE:FF</string>
+    <string name="form_status_check_help">Status checks use ICMP + TCP 3389 by default. Advanced overrides remain available in Device Details.</string>
+    <string name="validation_name_required">Name is required</string>
+    <string name="validation_name_too_long">Name must be at most 100 characters</string>
+    <string name="validation_ip_address_invalid">IP address is invalid</string>
+    <string name="validation_mac_address_invalid">MAC address is invalid</string>
+    <string name="validation_broadcast_address_invalid">Broadcast address is invalid</string>
+    <string name="validation_wol_port_invalid">WoL port must be between 1 and 65535</string>
+    <string name="validation_status_check_port_invalid">Status-check port must be between 1 and 65535</string>
+
+    <string name="details_saved_device">Saved device</string>
+    <string name="details_network_parameters">Network parameters</string>
+    <string name="details_wake_on_lan">Wake-on-LAN</string>
+    <string name="details_broadcast_address">Broadcast address</string>
+    <string name="details_udp_port">UDP port</string>
+    <string name="details_availability_check">Availability check</string>
+    <string name="details_method">Method</string>
+    <string name="details_target_port">Target port</string>
+    <string name="details_packet_note">A sent packet confirms local delivery only. It does not confirm that the target is online.</string>
+    <string name="status_method_icmp">ICMP</string>
+    <string name="status_method_tcp">TCP</string>
+    <string name="status_method_icmp_tcp">ICMP + TCP</string>
+
+    <string name="add_devices_scanning">Scanning local network…</string>
+    <string name="add_devices_scanning_description">Looking for reachable devices</string>
+    <string name="add_devices_scan_unavailable">Scan unavailable</string>
+    <string name="add_devices_scan_error">Unable to scan this network.</string>
+    <string name="add_devices_no_reachable_devices">No reachable devices found</string>
+    <string name="add_devices_reachable_devices">Reachable devices</string>
+    <string name="add_devices_nothing_found">Nothing found</string>
+    <string name="add_devices_nothing_found_message">Make sure targets are on the same network, or add one manually.</string>
+    <string name="add_devices_unknown_device">Unknown device</string>
+    <string name="add_devices_reachable_host">Reachable host</string>
+    <string name="add_devices_open_tcp">Open TCP: %1$s</string>
+
+    <string name="event_device_saved">Device saved</string>
+    <string name="event_unable_to_save_device">Unable to save device</string>
+    <string name="event_device_could_not_be_saved">Device could not be saved</string>
+    <string name="event_device_deleted">Device deleted</string>
+    <string name="event_device_could_not_be_deleted">Device could not be deleted</string>
+    <string name="event_action_requires_engine">%1$s is available after the CP5 network engine</string>
 </resources>
