@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -25,10 +24,6 @@ import kotlinx.coroutines.launch
 class DevicesViewModel @Inject constructor(
     private val repository: DeviceRepository,
 ) : ViewModel() {
-    init {
-        seedSampleDeviceIfEmpty()
-    }
-
     val devices: StateFlow<List<Device>> = repository.observeDevices().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -84,23 +79,6 @@ class DevicesViewModel @Inject constructor(
         _events.tryEmit(UiMessage(R.string.event_action_requires_engine, listOf(action)))
     }
 
-    // Temporary layout fixture. Remove after the real device/discovery flow is complete.
-    private fun seedSampleDeviceIfEmpty() {
-        viewModelScope.launch {
-            runCatching {
-                if (repository.observeDevices().first().isEmpty()) {
-                    repository.addDevice(
-                        Device(
-                            name = "Office PC",
-                            ipAddress = "192.168.1.20",
-                            macAddress = "AA:BB:CC:DD:EE:FF",
-                            broadcastAddress = "255.255.255.255",
-                        ),
-                    )
-                }
-            }
-        }
-    }
 }
 
 data class UiMessage(
