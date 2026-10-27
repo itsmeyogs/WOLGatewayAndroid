@@ -47,7 +47,7 @@ flowchart TD
 
 Top app bar: title “Devices”, settings action. Below: gateway summary strip showing API, tunnel, and service as separate labeled indicators. Main content is a `LazyColumn` of device rows/cards. FAB and empty-state add action open Add Devices; Add Devices owns network scan and manual registration.
 
-Device item hierarchy: name + status label, IP on its own line, MAC on its own line, last check time, primary Wake action, secondary overflow for status/detail/edit/delete. Do not show status-check method or port in the item. Swipe actions are optional; never replace accessible explicit actions.
+Device item hierarchy: name + status label, IP on its own line, MAC on its own line, last check time, primary Wake action, secondary overflow for status-check/edit/delete. Tapping the row opens Device Details. Do not show status-check method or port in the item. Swipe actions are optional; never replace accessible explicit actions.
 
 Device item uses a compact stacked row rather than a wide horizontal metadata layout:
 
@@ -167,7 +167,7 @@ All interactive icons need content descriptions and at least 48 dp touch target.
 - Combined checks show the method(s), timestamp, and reason. A single failed ICMP check does not render the target offline.
 - Windows target default shows ICMP + TCP `3389`; explain that disabled/blocked RDP produces `UNKNOWN`. Port overrides remain visible in device details.
 - Devices auto-checks visible devices every 60 seconds. Auto-check pauses when Devices is not visible.
-- Manual `Check status` is always available from the device overflow/details action.
+- Manual `Check status` is always available from the device overflow action or Device Details.
 - After Wake, one-shot checks run at 5, 15, and 30 seconds, then stop.
 - Background service does not poll target devices.
 

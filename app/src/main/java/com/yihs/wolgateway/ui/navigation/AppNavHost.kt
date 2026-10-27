@@ -43,6 +43,7 @@ fun AppNavHost() {
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
+    var pendingDeleteDeviceId by rememberSaveable { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
     val wakeLabel = stringResource(R.string.action_wake)
     val checkStatusLabel = stringResource(R.string.action_check_status)
@@ -129,6 +130,10 @@ fun AppNavHost() {
             startDestination = Screen.Devices.route,
             onWake = { viewModel.acknowledgeUnavailableAction(wakeLabel) },
             onCheckStatus = { viewModel.acknowledgeUnavailableAction(checkStatusLabel) },
+            onDeleteDevice = {
+                pendingDeleteDeviceId = it
+                showDeleteConfirmation = true
+            },
             devicesViewModel = viewModel,
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )
@@ -141,13 +146,17 @@ fun AppNavHost() {
             text = { Text(stringResource(R.string.dialog_delete_device_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedDeviceId?.let(viewModel::deleteDevice)
+                    (pendingDeleteDeviceId ?: selectedDeviceId)?.let(viewModel::deleteDevice)
                     showDeleteConfirmation = false
-                    navController.navigateUp()
+                    pendingDeleteDeviceId = null
+                    if (currentRoute == Screen.Details.route) navController.navigateUp()
                 }) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = {
+                    showDeleteConfirmation = false
+                    pendingDeleteDeviceId = null
+                }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }

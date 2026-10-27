@@ -27,7 +27,9 @@ fun DevicesScreen(
     onAdd: () -> Unit,
     onOpenDevice: (Long) -> Unit,
     onWake: (Long) -> Unit,
-    onMenu: (Long) -> Unit,
+    onCheckStatus: (Long) -> Unit,
+    onEditDevice: (Long) -> Unit,
+    onDeleteDevice: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
 ) {
@@ -75,7 +77,9 @@ fun DevicesScreen(
                             device = device,
                             onWake = { onWake(device.id) },
                             onOpen = { onOpenDevice(device.id) },
-                            onMenu = { onMenu(device.id) },
+                            onCheckStatus = { onCheckStatus(device.id) },
+                            onEdit = { onEditDevice(device.id) },
+                            onDelete = { onDeleteDevice(device.id) },
                         )
                     }
                 }
