@@ -34,6 +34,7 @@ import com.yihs.wolgateway.R
 @Composable
 fun DeviceFormScreen(
     deviceId: Long?,
+    initialIpAddress: String = "",
     onSaved: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
@@ -42,7 +43,7 @@ fun DeviceFormScreen(
         ?: remember { mutableStateOf(null) }
     val errors by viewModel.fieldErrors.collectAsStateWithLifecycle()
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
-    var ip by remember(existing) { mutableStateOf(existing?.ipAddress.orEmpty()) }
+    var ip by remember(existing, initialIpAddress) { mutableStateOf(existing?.ipAddress ?: initialIpAddress) }
     var mac by remember(existing) { mutableStateOf(existing?.macAddress.orEmpty()) }
     var broadcast by remember(existing) { mutableStateOf(existing?.broadcastAddress ?: "255.255.255.255") }
     var wolPort by remember(existing) { mutableStateOf(existing?.wolPort?.toString() ?: "9") }
@@ -57,17 +58,18 @@ fun DeviceFormScreen(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            FormField(stringResource(R.string.form_field_name), name, { name = it }, errors[DeviceField.NAME])
-            FormField(stringResource(R.string.form_field_ip_address), ip, { ip = it }, errors[DeviceField.IP_ADDRESS], KeyboardType.Uri)
+            FormField(stringResource(R.string.form_field_name), name, { name = it.take(100) }, errors[DeviceField.NAME])
+            FormField(stringResource(R.string.form_field_ip_address), ip, { ip = it.filter { char -> char.isDigit() || char == '.' }.take(15) }, errors[DeviceField.IP_ADDRESS], KeyboardType.Decimal)
             FormField(
                 stringResource(R.string.form_field_mac_address),
                 mac,
-                { mac = it },
+                { mac = it.filter { char -> char.isDigit() || char.lowercaseChar() in 'a'..'f' || char == ':' || char == '-' }.take(17) },
                 errors[DeviceField.MAC_ADDRESS],
                 placeholder = stringResource(R.string.form_mac_placeholder),
+                keyboardType = KeyboardType.Ascii,
             )
-            FormField(stringResource(R.string.form_field_broadcast_address), broadcast, { broadcast = it }, errors[DeviceField.BROADCAST_ADDRESS])
-            FormField(stringResource(R.string.form_field_wol_port), wolPort, { wolPort = it }, errors[DeviceField.WOL_PORT], KeyboardType.Number)
+            FormField(stringResource(R.string.form_field_broadcast_address), broadcast, { broadcast = it.filter { char -> char.isDigit() || char == '.' }.take(15) }, errors[DeviceField.BROADCAST_ADDRESS], KeyboardType.Decimal)
+            FormField(stringResource(R.string.form_field_wol_port), wolPort, { wolPort = it.filter(Char::isDigit).take(5) }, errors[DeviceField.WOL_PORT], KeyboardType.Number)
             Text(stringResource(R.string.form_status_check_help))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Button(

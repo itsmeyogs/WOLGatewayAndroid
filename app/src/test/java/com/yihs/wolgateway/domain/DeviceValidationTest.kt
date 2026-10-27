@@ -35,6 +35,18 @@ class DeviceValidationTest {
         assertTrue(DeviceValidator.validate(device).isEmpty())
     }
 
+    @Test
+    fun validatorRejectsMalformedMacAndNonIpv4FormInput() {
+        val issues = DeviceValidator.validate(
+            validDevice().copy(ipAddress = "192.168.x.20", macAddress = "AA:BB:CC:DD:EE"),
+        )
+
+        assertEquals(
+            setOf(DeviceField.IP_ADDRESS, DeviceField.MAC_ADDRESS),
+            issues.map { it.field }.toSet(),
+        )
+    }
+
     private fun validDevice() = Device(
         name = "Office PC",
         ipAddress = "192.168.1.20",

@@ -129,6 +129,7 @@ fun AppNavHost() {
             startDestination = Screen.Devices.route,
             onWake = { viewModel.acknowledgeUnavailableAction(wakeLabel) },
             onCheckStatus = { viewModel.acknowledgeUnavailableAction(checkStatusLabel) },
+            devicesViewModel = viewModel,
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )
     }

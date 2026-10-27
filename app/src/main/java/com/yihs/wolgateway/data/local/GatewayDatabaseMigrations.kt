@@ -25,7 +25,12 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             )
             """.trimIndent(),
         )
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_devices_ipAddress ON devices(ipAddress)")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_devices_macAddress ON devices(macAddress)")
+    }
+}
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS index_devices_ipAddress")
     }
 }

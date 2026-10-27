@@ -12,6 +12,7 @@ import com.yihs.wolgateway.ui.screen.device.detail.DeviceDetailsScreen
 import com.yihs.wolgateway.ui.screen.device.form.DeviceFormScreen
 import com.yihs.wolgateway.ui.screen.add_devices.AddDevicesScreen
 import com.yihs.wolgateway.ui.screen.settings.SettingsScreen
+import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 
 @Composable
 fun NavGraph(
@@ -19,6 +20,7 @@ fun NavGraph(
     startDestination: String,
     onWake: (Long) -> Unit,
     onCheckStatus: (Long) -> Unit,
+    devicesViewModel: DevicesViewModel,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -32,10 +34,14 @@ fun NavGraph(
                 onOpenDevice = { navController.navigate(Screen.Details.createRoute(it)) },
                 onWake = onWake,
                 onMenu = { navController.navigate(Screen.Details.createRoute(it)) },
+                viewModel = devicesViewModel,
             )
         }
         composable(Screen.AddDevices.route) {
-            AddDevicesScreen(onRegisterManually = { navController.navigate(Screen.Form.createRoute()) })
+            AddDevicesScreen(
+                onRegisterManually = { navController.navigate(Screen.Form.createRoute()) },
+                onRegisterDiscovered = { ip -> navController.navigate(Screen.Form.createRoute(ipAddress = ip)) },
+            )
         }
         composable(Screen.Settings.route) {
             SettingsScreen()
@@ -58,12 +64,25 @@ fun NavGraph(
                     type = NavType.LongType
                     defaultValue = -1L
                 },
+                navArgument(Screen.Form.ipArgument) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
             ),
         ) { entry ->
             val rawDeviceId = entry.arguments?.getLong(Screen.Form.deviceIdArgument) ?: -1L
+            val discoveredIp = entry.arguments?.getString(Screen.Form.ipArgument).orEmpty()
             DeviceFormScreen(
                 deviceId = rawDeviceId.takeUnless { it == -1L },
-                onSaved = { navController.popBackStack() },
+                initialIpAddress = discoveredIp,
+                viewModel = devicesViewModel,
+                onSaved = {
+                    if (rawDeviceId == -1L) {
+                        navController.popBackStack(Screen.Devices.route, inclusive = false)
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
             )
         }
     }

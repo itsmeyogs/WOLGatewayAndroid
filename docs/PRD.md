@@ -52,7 +52,7 @@ Devices menampilkan nama, IP, MAC, status `ONLINE`/`OFFLINE`/`UNKNOWN`, waktu pe
 
 ### FR-02 Discovery dan registration
 
-Add Devices otomatis membaca interface/subnet IPv4 yang tersedia saat screen dibuka, memindai host yang reachable dengan timeout, menampilkan hostname best-effort dan common TCP ports, serta mendeduplikasi hasil. MAC tidak diasumsikan tersedia. Manual registration selalu tersedia dengan validasi nama, IP, MAC, broadcast, dan port WoL default `9`.
+Add Devices pada kunjungan pertama memilih interface Wi-Fi/Ethernet IPv4 yang aktif, memindai host yang reachable dengan timeout, menyimpan hostname best-effort sebagai metadata internal, menampilkan IP dan common TCP ports, serta mendeduplikasi hasil. Saved device dengan IP yang sama tidak ditampilkan lagi pada hasil discovery. Hasil discovery dipertahankan saat pengguna membuka Add device lalu kembali; scan tidak diulang kecuali pull-to-refresh atau retry. MAC tidak diasumsikan tersedia dan ditampilkan sebagai unavailable sebelum registrasi. Tap result membuka registrasi dengan IP terisi. Manual registration tetap boleh memakai IP yang sama selama MAC berbeda. Save menampilkan snackbar sukses atau gagal; field invalid juga menampilkan inline validation.
 
 ### FR-03 WoL engine
 

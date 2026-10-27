@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.domain.model.Device
 import com.yihs.wolgateway.domain.repository.DeviceRepository
+import com.yihs.wolgateway.domain.repository.DuplicateDeviceException
 import com.yihs.wolgateway.domain.validation.DeviceField
 import com.yihs.wolgateway.domain.validation.InvalidDeviceException
 import com.yihs.wolgateway.domain.validation.ValidationMessage
@@ -57,6 +58,10 @@ class DevicesViewModel @Inject constructor(
             true
         } catch (error: InvalidDeviceException) {
             _fieldErrors.value = error.issues.associate { it.field to it.message }
+            _events.emit(UiMessage(R.string.event_device_validation_failed))
+            false
+        } catch (_: DuplicateDeviceException) {
+            _events.emit(UiMessage(R.string.event_device_duplicate))
             false
         } catch (_: IllegalArgumentException) {
             _events.emit(UiMessage(R.string.event_unable_to_save_device))

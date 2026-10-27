@@ -20,6 +20,7 @@
     <string name="action_saving">Saving…</string>
     <string name="action_clear_search">Clear search</string>
     <string name="action_add_manually">Add manually</string>
+    <string name="action_retry_scan">Retry scan</string>
 
     <string name="dialog_delete_device_title">Delete device?</string>
     <string name="dialog_delete_device_message">This removes the saved device configuration. The target PC is not affected.</string>
@@ -92,12 +93,15 @@
     <string name="add_devices_nothing_found">Nothing found</string>
     <string name="add_devices_nothing_found_message">Make sure targets are on the same network, or add one manually.</string>
     <string name="add_devices_unknown_device">Unknown device</string>
+    <string name="add_devices_mac_unavailable">MAC unavailable · enter it manually</string>
     <string name="add_devices_reachable_host">Reachable host</string>
     <string name="add_devices_open_tcp">Open TCP: %1$s</string>
 
     <string name="event_device_saved">Device saved</string>
     <string name="event_unable_to_save_device">Unable to save device</string>
     <string name="event_device_could_not_be_saved">Device could not be saved</string>
+    <string name="event_device_validation_failed">Fix the highlighted fields before saving</string>
+    <string name="event_device_duplicate">A device with this MAC address already exists</string>
     <string name="event_device_deleted">Device deleted</string>
     <string name="event_device_could_not_be_deleted">Device could not be deleted</string>
     <string name="event_action_requires_engine">%1$s is available after the CP5 network engine</string>

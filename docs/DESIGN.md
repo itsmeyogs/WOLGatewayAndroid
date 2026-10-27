@@ -65,11 +65,11 @@ IP and MAC may wrap on narrow screens or with font scaling; neither is forcibly 
 
 ### Add Devices
 
-Top app bar title is “Add Devices”; content has no duplicate page heading. On entry, scan the active IPv4 subnet automatically and show reachable hosts in a list with address, best-effort hostname, and open common TCP ports. Show scanning, empty, and failure states. Manual registration remains available as a persistent bottom action.
+Top app bar title is “Add Devices”; content has no duplicate page heading. On first entry, scan the active Wi-Fi/Ethernet IPv4 subnet automatically and show reachable hosts in a list with IP, explicit MAC-unavailable guidance, and open common TCP ports. Hide discovery results whose IP already exists in saved devices. Hostname is best-effort internal metadata and is not shown before registration. Preserve completed results when navigating to Add device and returning; do not scan again unless the user pulls to refresh or retries a failed scan. Show scanning, empty, failure, retry, and pull-to-refresh states. Tapping a result opens the add form with IP prefilled; manual registration remains available as a persistent bottom action.
 
 ### Device Discovery
 
-Network context: active interface/subnet and permission note. Add Devices scans automatically on entry. Results show IP, hostname if known, reachable common TCP ports, and register action when persistence is added. Manual registration remains visible as a primary fallback.
+Network context: active interface/subnet and permission note. Add Devices scans automatically on first entry. Results show the IP, explicit MAC-unavailable guidance, and reachable common TCP ports; saved IPs are excluded, hostname remains best-effort internal metadata and is not shown before registration. Completed results support pull-to-refresh; tapping a result opens registration with its IP prefilled. Manual registration remains visible as a primary fallback and may reuse an IP when the MAC differs.
 
 ### Device Details
 
@@ -79,7 +79,7 @@ Device Details uses a vertically scrollable content column. Network parameters a
 
 ### Add/Edit Device
 
-Scrollable form with name, IP, MAC, broadcast, WoL port, optional status-check method/port. App-bar title is “Add device” for a new record and “Edit device” for an existing record. Inline validation, examples, keyboard-safe layout, save disabled only when invalid/unfinished state is clear. MAC manual entry is first-class, not an error fallback hidden behind discovery.
+Scrollable form with name, IPv4 address, MAC, broadcast address, WoL port, optional status-check method/port. Name, IP, MAC, broadcast, and numeric port fields constrain input while typing; final validation remains authoritative. App-bar title is “Add device” for a new record and “Edit device” for an existing record. Inline validation, examples, keyboard-safe layout, and success/failure snackbar feedback are required. MAC manual entry is first-class, not an error fallback hidden behind discovery. Save from a new device returns directly to Devices; returning to Add Devices does not rescan.
 
 ### Tunnel Management
 
@@ -145,7 +145,7 @@ Use surface tonal elevation first. Shadows only for floating actions/dialogs; no
 | `GatewayStatusStrip` | separate API/tunnel/service status | healthy/partial/stopped/error |
 | `WakeDeviceButton` | explicit WoL action | idle/loading/sent/failed |
 | `DeviceSearchBar` | query filter | empty/active/cleared |
-| `NetworkScanResultItem` | discovery result | MAC known/unknown/registered |
+| `NetworkScanResultItem` | discovery result | IP, MAC unavailable, open ports, tappable |
 | `DeviceForm` | add/edit fields | pristine/invalid/saving/error |
 | `TunnelTokenField` | masked secret input | hidden/revealed/saved/error |
 | `DiagnosticItem` | safe component diagnostic | pass/warn/fail/not configured |
@@ -189,6 +189,7 @@ API server, tunnel, target device, and background service each get separate labe
 - Snackbar for non-destructive success/failure.
 - Dialog for delete, token removal, revoke, and potentially disruptive bind changes.
 - Inline errors for form fields.
+- Snackbar for every save result: success, validation failure, duplicate MAC, or persistence failure.
 - Persistent notification only for active service; never include token or sensitive endpoint data.
 
 ## 7. Responsive/accessibility rules

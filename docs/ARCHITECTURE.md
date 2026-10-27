@@ -24,7 +24,7 @@ flowchart LR
 
 ### Presentation
 
-Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. `AppNavHost` owns the single app-level `Scaffold` plus route chrome (app bar, FAB, snackbar host); no bottom navigation bar is used. App-bar titles are the only page headings. Screen composables render content only and must not create nested `Scaffold` instances. UI styling uses warm surfaces, deep navy ink, restrained cyan actions, and semantic status accents. Tidak memuat socket, DAO, atau business rule.
+Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. `AppNavHost` owns the single app-level `Scaffold` plus route chrome (app bar, FAB, snackbar host); no bottom navigation bar is used. The app-shell `DevicesViewModel` is passed to device/form routes so save events reach the single snackbar host. App-bar titles are the only page headings. Screen composables render content only and must not create nested `Scaffold` instances. UI styling uses warm surfaces, deep navy ink, restrained cyan actions, and semantic status accents. Tidak memuat socket, DAO, atau business rule.
 
 User-facing text is centralized in `app/src/main/res/values/strings.xml`. Composables resolve text with `stringResource`; ViewModel events carry string resource IDs and arguments rather than localized text. Screen content that can exceed the viewport uses a scroll container (`LazyColumn` or `verticalScroll`); app-bar titles remain outside screen content.
 
@@ -42,7 +42,7 @@ Ktor server lifecycle, routing, DTO, serializers, auth middleware, request valid
 
 ### WoL/network
 
-Magic packet builder, UDP sender, discovery adapter, status checker, network interface provider. Semua I/O asynchronous dan cancellable.
+Magic packet builder, UDP sender, discovery adapter, status checker, network interface provider. Discovery memilih Wi-Fi/Ethernet sebelum cellular, membatasi concurrency, menerapkan timeout per host dan total scan, mendeduplikasi result, serta menjaga hostname sebagai metadata internal. Add Devices mempertahankan state discovery di ViewModel back-stack; navigation ke form tidak memicu scan baru. Semua I/O asynchronous dan cancellable.
 
 ### Tunnel
 
@@ -125,7 +125,7 @@ CP1 memilih Hilt sebagai dependency injection framework. `MainActivity` memakai 
 
 | Data | Storage | Catatan |
 |---|---|---|
-| Device records | Room | IP/MAC/broadcast/WoL port/status-check metadata |
+| Device records | Room | IP/MAC/broadcast/WoL port/status-check metadata; MAC unique, IP may repeat after Room migration `2 -> 3` |
 | UI/service preferences | DataStore | Non-secret only |
 | API token | Keystore-backed secure store | Tidak masuk DataStore/log |
 | Tunnel token | Keystore-backed secure store | Tidak ditampilkan penuh |

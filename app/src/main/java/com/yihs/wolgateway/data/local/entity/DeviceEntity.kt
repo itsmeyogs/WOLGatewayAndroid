@@ -10,7 +10,6 @@ import com.yihs.wolgateway.domain.model.WolResult
 @Entity(
     tableName = "devices",
     indices = [
-        Index(value = ["ipAddress"], unique = true),
         Index(value = ["macAddress"], unique = true),
     ],
 )

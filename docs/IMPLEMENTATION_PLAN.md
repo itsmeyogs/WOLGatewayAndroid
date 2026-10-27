@@ -83,8 +83,10 @@ Implemented screen ownership:
 
 ### CP4 — Add Devices discovery
 
-Implement Add Devices automatic non-root discovery on screen entry with cancellation, timeout, dedupe, hostname best-effort, reachable-host results, and manual fallback.
-Acceptance: real Wi-Fi test or explicitly BLOCKED with evidence.
+Implement Add Devices automatic non-root discovery on first screen entry with cancellation, timeout, dedupe, hostname best-effort, reachable-host results, retained ViewModel state across form navigation, explicit pull-to-refresh/retry scan, tap-to-register results with explicit MAC-unavailable guidance, and manual fallback.
+Registration behavior: filter discovery results by saved IP; manual registration may reuse an IP when MAC differs. New-device save returns to Devices with snackbar feedback; form input constraints and validation remain enforced at the UI and repository boundary.
+Snackbar events use the app-shell `DevicesViewModel` shared with the form route; save feedback is not emitted from an unobserved route-local ViewModel.
+Acceptance: real Wi-Fi device environment recorded; manual UI checklist remains user-run and must be marked PASS only after execution. If no device/network is available, mark BLOCKED with evidence.
 
 ### CP5 — WoL & status
 

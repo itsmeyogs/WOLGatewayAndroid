@@ -45,9 +45,6 @@ class RoomDeviceRepository @Inject constructor(
     }
 
     private suspend fun ensureUnique(device: Device) {
-        dao.findByIpAddress(device.ipAddress)?.let {
-            if (it.id != device.id) throw DuplicateDeviceException(DuplicateDeviceField.IP_ADDRESS)
-        }
         dao.findByMacAddress(device.macAddress)?.let {
             if (it.id != device.id) throw DuplicateDeviceException(DuplicateDeviceField.MAC_ADDRESS)
         }
