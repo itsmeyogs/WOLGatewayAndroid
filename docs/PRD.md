@@ -111,7 +111,11 @@ API menyediakan token random yang dibuat aplikasi sebagai default. Settings memi
 
 ### FR-11 Settings dan diagnostics
 
-Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, interval status, Standard/Root Mode, service, root, versi, dan diagnostics yang tidak membocorkan secret.
+Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, interval status, Standard/Root Mode, service, root, versi, dan diagnostics yang tidak membocorkan secret. Row Diagnostics membuka satu halaman baru yang scrollable.
+
+Diagnostics selalu menampilkan versi aplikasi, versi Android/ABI, klasifikasi device (automatic test, emulator, atau real device), interface jaringan aktif, status API, tunnel, `GatewayService`, serta last safe errors. Halaman menampilkan section berdasarkan mode aktif: Standard Mode berisi status service, API-only/API+tunnel, foreground service/notification, preferensi autostart, dan batasan battery/OEM/boot recovery; Root Mode berisi capability, consent, privilege check, supervisor, fitur root-dependent, fallback, dan safe errors. Root capability boleh tampil informasional dalam Standard Mode.
+
+Diagnostics menyediakan copy output yang stabil dan sudah di-redact. Tidak boleh ada token/credential, raw shell output, command, path sensitif, atau detail privilege escalation dalam UI, output copy, log, notification, report, maupun screenshot. Status memakai `pass`, `warn`, `fail`, dan `not configured`.
 
 ## 6. Security requirements
 

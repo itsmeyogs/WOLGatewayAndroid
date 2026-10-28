@@ -136,12 +136,16 @@ CP1 memilih Hilt sebagai dependency injection framework. `MainActivity` memakai 
 | API token | Keystore-backed secure store | Tidak masuk DataStore/log |
 | Tunnel token | Keystore-backed secure store | Tidak ditampilkan penuh |
 | Runtime state | Flow/controller memory | Persist hanya metadata aman |
-| Diagnostics | bounded in-memory/log output | redaction wajib |
+| Diagnostics | bounded in-memory/log output + derived UI state | redaction wajib; copy output harus stabil dan safe |
 
 Tunnel auto-reconnect preference is stored in DataStore as non-secret UI/runtime configuration. Disconnect clears the preference. It cannot enable a connection without a saved tunnel token; the UI keeps connect disabled and reports the missing token.
 
 Tunnel controller failures retain redacted diagnostics in Logcat but expose only allowlisted user-safe causes. A failed connect is never represented as `CONNECTED`; the UI derives the switch from the runtime state and therefore returns it off.
 The initial controller state exposes `tokenConfigured = false` without a start-failure error. The ViewModel renders the token form and places the token-required or connection-failure message in the Connection section.
+
+Diagnostics is exposed through one Settings → Diagnostics page. A diagnostics provider aggregates general runtime facts and mode-specific facts without owning service/controller lifecycle. General data covers app/device/network/API/tunnel/service state and safe errors. Standard Mode data covers foreground-service/notification state, API/tunnel autostart preferences, service mode, and relevant OS/OEM limitations. Root Mode data is isolated behind root capability/consent checks and covers privilege verification, supervisor state, root-dependent availability, fallback, and safe errors. Root capability can be shown as informational data while Standard Mode is active.
+
+Diagnostics output is bounded, derived, and redacted at the provider boundary. Copy serialization uses an allowlist, stable labels, and `configured/not configured` markers for secrets. It never includes raw shell output, commands, credentials, sensitive paths, or privilege-escalation details. Missing rooted hardware blocks Root Mode validation; it does not make Standard Mode diagnostics fail.
 
 ## 5. Lifecycle
 

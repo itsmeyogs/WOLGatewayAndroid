@@ -95,7 +95,14 @@ Standard Mode selected by default. Root capability and permission status are inf
 
 ### Diagnostics
 
-Dense diagnostic list: Android version/ABI, network interface, API server, tunnel, service, root, last safe errors, app version. Secret values show only “configured/not configured” or redacted form. Include copy-safe diagnostics with explicit redaction.
+Settings opens one scrollable `Diagnostics` page. The page always contains a `General` section with Android version/ABI, device classification (automatic test, emulator, or real device), active network interface, API server, tunnel, `GatewayService`, app version, and last safe errors. Secret values show only “configured/not configured” or an explicitly redacted form.
+
+The page is mode-aware, not split into separate Standard/Root pages:
+
+- `Standard Mode`: service running state, API-only/API+tunnel mode, foreground-service and notification status, API/tunnel autostart preferences, and relevant battery/OEM or boot-recovery limitations. Root capability remains informational.
+- `Root Mode`: root capability, user consent, privilege-check result, supervisor status, root-dependent feature availability, fallback status, and root-specific safe errors.
+
+The Settings Diagnostics row navigates to this page. Include an explicit copy action with stable, copy-safe redaction. Do not show raw shell output, commands, credentials, tokens, sensitive paths, or privilege-escalation details. Use `DiagnosticItem` states `pass`, `warn`, `fail`, and `not configured`.
 
 ## 4. Design tokens
 

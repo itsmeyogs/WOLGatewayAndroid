@@ -42,6 +42,7 @@ Do not add a new library when JDK/Kotlin/Android platform APIs or an installed d
 | CP9 | Background service | lifecycle on target devices | Android device matrix |
 | CP10 | Root Mode | optional isolated fallback | rooted/non-root tests |
 | CP11 | Integration/regression | final criteria or blockers approved | E2E/security/regression |
+| CP12 | Diagnostics | copy-safe mode-aware troubleshooting page | redaction/unit/device checks |
 
 ## 4. Checkpoint details
 
@@ -125,6 +126,16 @@ Acceptance: Standard Mode unaffected. Missing rooted hardware means BLOCKED, not
 
 Run UI→domain→DB, API→domain→WoL, local tunnel→Ktor, then external tunnel→API, reconnect, background, security, UI consistency, documentation, and Git checks.
 Acceptance: all criteria PASS or explicitly approved blockers.
+
+### CP12 — Diagnostics
+
+Implement the final Settings → Diagnostics page as one scrollable, mode-aware page. Always show general diagnostics: app version, Android version/ABI, device classification (automatic test/emulator/real device), active network interface, API status, tunnel status, GatewayService status, and last safe errors. Show only `configured/not configured` or redacted values for secrets.
+
+Show Standard Mode diagnostics when Standard Mode is active: service running state, API-only/API+tunnel mode, foreground-service and notification status, API/tunnel autostart preferences, and relevant battery/OEM or boot-recovery limitations. Show Root Mode diagnostics when Root Mode is active: root capability, user consent, privilege check, supervisor status, root-dependent feature availability, fallback status, and root-specific safe errors. Root capability may remain informational in Standard Mode; no arbitrary shell execution or raw privilege output.
+
+Diagnostics is opened from a Settings row and uses one page with `General`, `Standard Mode`, or `Root Mode` sections rather than separate pages. Include an explicit copy action producing copy-safe, redacted output. Preserve distinctions between `pass`, `warn`, `fail`, and `not configured`; do not infer target-device status from gateway diagnostics.
+
+Acceptance: no API/tunnel/root secret appears in UI, copied output, logs, notifications, reports, or screenshots; diagnostics distinguish automatic test, emulator, and real device; Standard Mode remains unaffected by Root Mode diagnostics; copy output is stable and redacted; scroll/font scaling/accessibility requirements pass. Validate with unit redaction tests, `:app:assembleDebug`, `:app:testDebugUnitTest`, and Standard/Root device checks where hardware exists. Missing rooted hardware is `BLOCKED`, not `PASS`.
 
 ## 5. Mandatory report format
 
