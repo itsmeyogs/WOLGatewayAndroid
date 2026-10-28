@@ -27,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.yihs.wolgateway.gateway.server.GatewayServer
+import com.yihs.wolgateway.tunnel.controller.TunnelController
 
 @HiltViewModel
 class DevicesViewModel @Inject constructor(
@@ -34,8 +35,10 @@ class DevicesViewModel @Inject constructor(
     private val wakeDeviceUseCase: WakeDeviceUseCase,
     private val checkDeviceStatusUseCase: CheckDeviceStatusUseCase,
     gatewayServer: GatewayServer,
+    tunnelController: TunnelController,
 ) : ViewModel() {
     val gatewayState = gatewayServer.state
+    val tunnelState = tunnelController.state
 
     val devices: StateFlow<List<Device>> = repository.observeDevices().stateIn(
         scope = viewModelScope,

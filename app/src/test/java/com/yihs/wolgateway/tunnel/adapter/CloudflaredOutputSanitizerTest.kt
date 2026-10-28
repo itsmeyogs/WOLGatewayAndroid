@@ -32,6 +32,14 @@ class CloudflaredOutputSanitizerTest {
     }
 
     @Test
+    fun exposesOnlySafeInvalidTokenMessage() {
+        val output = "Cloudflare runtime did not register a tunnel connection exitCode=255: " +
+            "Provided Tunnel token is not valid. | See 'cloudflared tunnel run --help'."
+
+        assertEquals("Provided Tunnel token is not valid.", userSafeTunnelMessage(output))
+    }
+
+    @Test
     fun usesStaticIpv4EdgesBeforeRunToBypassAndroidSrvDns() {
         val command = cloudflaredCommand("runtime", "config", "token")
 

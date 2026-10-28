@@ -79,7 +79,7 @@ CP6 implementation exposes the routes above under `/api/v1`. `/api/v1/health` re
 
 ### FR-05 Tunnel
 
-Tunnel mendukung token, connect, disconnect, reconnect, auto-connect sesuai konfigurasi, health monitoring, last-connected time, error aman, token replacement, duplicate prevention, cleanup, dan status:
+Tunnel mendukung token, connect, disconnect, auto-reconnect melalui switch, health monitoring, last-connected time, error aman, token replacement, duplicate prevention, cleanup, dan status. Tidak ada tombol reconnect manual. Instalasi baru langsung menampilkan form token tanpa placeholder masked atau tombol edit. Connect disabled sampai token tersimpan; auto-reconnect section hanya tampil ketika koneksi aktif dan dimatikan saat disconnect. Token tidak dapat diedit selama connecting/connected/reconnecting. Origin tunnel mengikuti `127.0.0.1:<API port>` dari API Settings dan tidak diedit pada halaman tunnel. Kegagalan connect mematikan switch dan menampilkan penyebab singkat pada section Connection. Dashboard Devices menampilkan status tunnel live yang sama dengan halaman Tunnel. Status:
 
 `NOT_CONFIGURED`, `DISCONNECTED`, `CONNECTING`, `CONNECTED`, `RECONNECTING`, `ERROR`.
 

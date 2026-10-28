@@ -18,3 +18,4 @@ local.properties
 /reports/
 /reports/checkpoints/
 /reports/test-results/
+/.kotlin/

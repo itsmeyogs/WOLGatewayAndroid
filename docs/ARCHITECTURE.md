@@ -24,7 +24,7 @@ flowchart LR
 
 ### Presentation
 
-Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. `AppNavHost` owns the single app-level `Scaffold` plus route chrome (app bar, FAB, snackbar host); no bottom navigation bar is used. The app-shell `DevicesViewModel` is passed to device/form routes so save events reach the single snackbar host. App-bar titles are the only page headings. Screen composables render content only and must not create nested `Scaffold` instances. UI styling uses warm surfaces, deep navy ink, restrained cyan actions, and semantic status accents. Tidak memuat socket, DAO, atau business rule.
+Compose screens, reusable components, Hilt ViewModels, immutable UI state, UI events, lifecycle-aware Flow collection. `AppNavHost` owns the single app-level `Scaffold` plus route chrome (app bar, FAB, snackbar host); no bottom navigation bar is used. The app-shell `DevicesViewModel` is passed to device/form routes so save events reach the single snackbar host. `DevicesViewModel` also exposes the shared `TunnelController.state` so `GatewayStatusStrip` displays live tunnel status without a duplicate state machine. App-bar titles are the only page headings. Screen composables render content only and must not create nested `Scaffold` instances. UI styling uses warm surfaces, deep navy ink, restrained cyan actions, and semantic status accents. Tidak memuat socket, DAO, atau business rule.
 
 User-facing text is centralized in `app/src/main/res/values/strings.xml`. Composables resolve text with `stringResource`; ViewModel events carry string resource IDs and arguments rather than localized text. Screen content that can exceed the viewport uses a scroll container (`LazyColumn` or `verticalScroll`); app-bar titles remain outside screen content.
 
@@ -46,7 +46,7 @@ Magic packet builder, UDP sender, discovery adapter, status checker, network int
 
 ### Tunnel
 
-`TunnelController`, state machine, `TunnelRuntime` adapter, health monitor, retry policy, process/native runtime adapter. Kandidat `cloudflared-android` diisolasi di layer ini.
+`TunnelController`, state machine, `TunnelRuntime` adapter, health monitor, retry policy, process/native runtime adapter. `TunnelViewModel` reads the non-secret API port preference and supplies the loopback origin `127.0.0.1:<port>`; tunnel origin is not independently editable. Auto-reconnect is a non-secret DataStore preference, while the Cloudflare token remains in its separate Keystore-backed store. Kandidat `cloudflared-android` diisolasi di layer ini.
 
 ### Android service
 
@@ -136,6 +136,11 @@ CP1 memilih Hilt sebagai dependency injection framework. `MainActivity` memakai 
 | Tunnel token | Keystore-backed secure store | Tidak ditampilkan penuh |
 | Runtime state | Flow/controller memory | Persist hanya metadata aman |
 | Diagnostics | bounded in-memory/log output | redaction wajib |
+
+Tunnel auto-reconnect preference is stored in DataStore as non-secret UI/runtime configuration. Disconnect clears the preference. It cannot enable a connection without a saved tunnel token; the UI keeps connect disabled and reports the missing token.
+
+Tunnel controller failures retain redacted diagnostics in Logcat but expose only allowlisted user-safe causes. A failed connect is never represented as `CONNECTED`; the UI derives the switch from the runtime state and therefore returns it off.
+The initial controller state exposes `tokenConfigured = false` without a start-failure error. The ViewModel renders the token form and places the token-required or connection-failure message in the Connection section.
 
 ## 5. Lifecycle
 

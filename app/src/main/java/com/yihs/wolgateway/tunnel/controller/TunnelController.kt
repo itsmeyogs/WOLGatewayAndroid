@@ -1,6 +1,7 @@
 package com.yihs.wolgateway.tunnel.controller
 
 import com.yihs.wolgateway.tunnel.adapter.TunnelRuntime
+import com.yihs.wolgateway.tunnel.adapter.userSafeTunnelMessage
 import com.yihs.wolgateway.tunnel.TunnelLog
 import com.yihs.wolgateway.tunnel.model.TunnelRuntimeConfig
 import com.yihs.wolgateway.tunnel.model.TunnelState
@@ -10,9 +11,12 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -26,30 +30,42 @@ class TunnelController @Inject constructor(
     private val _state = MutableStateFlow(initialState())
     val state: StateFlow<TunnelControllerState> = _state.asStateFlow()
     private val lifecycleMutex = Mutex()
+    private var autoReconnect = false
+    private var originAddress: String? = null
+    private var monitorJob: Job? = null
 
     fun saveToken(token: String): Boolean = runCatching {
         tokenStore.replace(token)
         _state.value = _state.value.copy(
             status = TunnelState.DISCONNECTED,
+            tokenConfigured = true,
             tokenPreview = maskToken(token),
             error = null,
+            userMessage = null,
         )
     }.isSuccess
 
     fun connect(originAddress: String) {
         scope.launch {
             lifecycleMutex.withLock {
+                this@TunnelController.originAddress = originAddress
                 val token = tokenStore.read()
                 if (token == null) {
-                    _state.value = _state.value.copy(status = TunnelState.NOT_CONFIGURED)
+                    _state.value = _state.value.copy(
+                        status = TunnelState.NOT_CONFIGURED,
+                        tokenConfigured = false,
+                        error = null,
+                        userMessage = null,
+                    )
                     return@withLock
                 }
-                _state.value = _state.value.copy(status = TunnelState.CONNECTING, error = null)
+                    _state.value = _state.value.copy(status = TunnelState.CONNECTING, error = null, userMessage = null)
                 try {
                     if (!runtime.isRunning()) {
                         runtime.start(TunnelRuntimeConfig(token, originAddress))
                     }
                     _state.value = _state.value.copy(status = TunnelState.CONNECTED)
+                    startMonitorIfNeeded()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -57,6 +73,7 @@ class TunnelController @Inject constructor(
                     _state.value = _state.value.copy(
                         status = TunnelState.ERROR,
                         error = error.toControllerError(),
+                        userMessage = error.toUserMessage(),
                     )
                 }
             }
@@ -66,16 +83,23 @@ class TunnelController @Inject constructor(
     fun reconnect(originAddress: String) {
         scope.launch {
             lifecycleMutex.withLock {
-                _state.value = _state.value.copy(status = TunnelState.RECONNECTING, error = null)
+                this@TunnelController.originAddress = originAddress
+                _state.value = _state.value.copy(status = TunnelState.RECONNECTING, error = null, userMessage = null)
                 runCatching { runtime.stop() }
                 val token = tokenStore.read()
                 if (token == null) {
-                    _state.value = _state.value.copy(status = TunnelState.NOT_CONFIGURED)
+                    _state.value = _state.value.copy(
+                        status = TunnelState.NOT_CONFIGURED,
+                        tokenConfigured = false,
+                        error = null,
+                        userMessage = null,
+                    )
                     return@withLock
                 }
                 try {
                     runtime.start(TunnelRuntimeConfig(token, originAddress))
                     _state.value = _state.value.copy(status = TunnelState.CONNECTED)
+                    startMonitorIfNeeded()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -83,6 +107,7 @@ class TunnelController @Inject constructor(
                     _state.value = _state.value.copy(
                         status = TunnelState.ERROR,
                         error = error.toControllerError(),
+                        userMessage = error.toUserMessage(),
                     )
                 }
             }
@@ -90,10 +115,60 @@ class TunnelController @Inject constructor(
     }
 
     fun disconnect() {
+        monitorJob?.cancel()
+        monitorJob = null
         scope.launch {
             lifecycleMutex.withLock {
                 runCatching { runtime.stop() }
-                _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null)
+                _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null, userMessage = null)
+            }
+        }
+    }
+
+    fun setAutoReconnect(enabled: Boolean) {
+        autoReconnect = enabled
+        if (!enabled) {
+            monitorJob?.cancel()
+            monitorJob = null
+        } else if (_state.value.status == TunnelState.CONNECTED) {
+            startMonitorIfNeeded()
+        }
+    }
+
+    private fun startMonitorIfNeeded() {
+        if (!autoReconnect || monitorJob?.isActive == true) return
+        monitorJob = scope.launch {
+            while (isActive) {
+                delay(MONITOR_INTERVAL_MS)
+                if (!autoReconnect || runtime.isRunning()) continue
+                lifecycleMutex.withLock {
+                    if (!autoReconnect || runtime.isRunning()) return@withLock
+                    val origin = originAddress ?: return@withLock
+                    val token = tokenStore.read()
+                    if (token == null) {
+                        _state.value = _state.value.copy(
+                            status = TunnelState.NOT_CONFIGURED,
+                            tokenConfigured = false,
+                            error = null,
+                            userMessage = null,
+                        )
+                        return@withLock
+                    }
+                    _state.value = _state.value.copy(status = TunnelState.RECONNECTING, error = null)
+                    try {
+                        runtime.start(TunnelRuntimeConfig(token, origin))
+                        _state.value = _state.value.copy(status = TunnelState.CONNECTED)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        TunnelLog.error("auto reconnect failed error=${error.safeMessage()}")
+                        _state.value = _state.value.copy(
+                            status = TunnelState.RECONNECTING,
+                            error = error.toControllerError(),
+                            userMessage = error.toUserMessage(),
+                        )
+                    }
+                }
             }
         }
     }
@@ -102,6 +177,7 @@ class TunnelController @Inject constructor(
         val token = tokenStore.read()
         return TunnelControllerState(
             status = if (token == null) TunnelState.NOT_CONFIGURED else TunnelState.DISCONNECTED,
+            tokenConfigured = token != null,
             tokenPreview = token?.let(::maskToken) ?: "••••••••",
         )
     }
@@ -110,13 +186,16 @@ class TunnelController @Inject constructor(
 
     private companion object {
         const val TOKEN_PREVIEW_LENGTH = 6
+        const val MONITOR_INTERVAL_MS = 1_000L
     }
 }
 
 data class TunnelControllerState(
     val status: TunnelState,
+    val tokenConfigured: Boolean,
     val tokenPreview: String,
     val error: TunnelControllerError? = null,
+    val userMessage: String? = null,
 )
 
 enum class TunnelControllerError {
@@ -132,3 +211,7 @@ private fun Exception.toControllerError(): TunnelControllerError =
     }
 
 private fun Throwable.safeMessage(): String = message?.take(300) ?: javaClass.simpleName
+
+private fun Throwable.toUserMessage(): String? {
+    return userSafeTunnelMessage(message.orEmpty())
+}

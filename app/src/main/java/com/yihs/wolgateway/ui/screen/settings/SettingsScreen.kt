@@ -56,7 +56,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.settings_tunnel), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.settings_tunnel_value), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                 Text(stringResource(R.string.tunnel_description_short), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))

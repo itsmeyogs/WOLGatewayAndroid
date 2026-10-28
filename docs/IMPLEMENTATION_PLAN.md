@@ -108,7 +108,7 @@ Acceptance: `PASS`; CP7 implementation and Android ARM64 end-to-end validation a
 
 ### CP8 — Tunnel management
 
-Implement adapter/controller, state machine, secure token storage, health monitoring, retry/backoff/jitter, token replacement, duplicate prevention, and cleanup based on CP7 result.
+Implement adapter/controller, state machine, secure token storage, health monitoring, retry/backoff/jitter, token replacement, duplicate prevention, cleanup, and the tunnel management UI based on CP7 result. The tunnel screen uses separated Connection, conditional Auto reconnect, and Tunnel token sections with dividers. Fresh install shows the token form directly; no editable origin, manual reconnect action, or token copy exists. Tunnel origin follows the API Settings port at `127.0.0.1:<port>`. Connect remains disabled until a token is saved; token editing is locked during an active connection attempt or connection; connection errors occupy the Connection message slot. Devices dashboard consumes the shared controller Flow through `DevicesViewModel` and renders the live tunnel state in `GatewayStatusStrip`.
 Acceptance: connect/disconnect/reconnect verified, including process crash and network loss.
 
 ### CP9 — Background service

@@ -64,7 +64,6 @@ fun NavGraph(
         composable(Screen.Tunnel.route) {
             TunnelScreen(
                 viewModel = tunnelViewModel,
-                onCopyText = onCopyText,
             )
         }
         composable(

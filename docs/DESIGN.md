@@ -45,7 +45,7 @@ flowchart TD
 
 ### Devices
 
-Top app bar: title “Devices”, settings action. Below: gateway summary strip showing API, tunnel, and service as separate labeled indicators. Main content is a `LazyColumn` of device rows/cards. FAB and empty-state add action open Add Devices; Add Devices owns network scan and manual registration.
+Top app bar: title “Devices”, settings action. Below: gateway summary strip showing API, the live tunnel state, and service as separate labeled indicators. The tunnel indicator mirrors `TunnelController.state` and updates for not configured, disconnected, connecting, connected, reconnecting, and error. Main content is a `LazyColumn` of device rows/cards. FAB and empty-state add action open Add Devices; Add Devices owns network scan and manual registration.
 
 Device item hierarchy: name + status label, IP on its own line, MAC on its own line, last check time, and primary Wake action only when status is not `ONLINE`. Tapping the row opens Device Details. There is no overflow menu in the device item. Do not show status-check method or port in the item. Swipe actions are optional; never replace accessible explicit actions.
 
@@ -83,7 +83,7 @@ Scrollable form with name, IPv4 address, MAC, broadcast address, WoL port, optio
 
 ### Tunnel Management
 
-State header with text + explanatory sentence. Token field remains masked, supports encrypted save and replacement, and never copies the full secret. Connect/reconnect/disconnect are available; runtime errors are redacted. Last connection time, health monitoring, remove configuration, and retry/backoff policy remain CP8 scope. Reconnecting must not claim connected before runtime verification.
+One `Connection` surface contains the connection status and connect switch. A separate auto-reconnect section appears only while the connection is on. A separate tunnel-token section shows the token form immediately when unconfigured, otherwise a masked preview with edit. The connect switch is disabled until a tunnel token is saved and shows an inline setup message while unconfigured. Auto-reconnect is enabled only while the connection switch is on and is cleared on disconnect. There is no manual reconnect action. The tunnel origin is not editable: runtime ingress always follows the API Settings loopback origin `127.0.0.1:<port>`. Token save/replacement follows the API token editing pattern, but tunnel secrets remain separately encrypted and the token preview has no copy action. Token editing is unavailable while connecting, connected, or reconnecting. Runtime errors are redacted to user-safe messages. Last connection time, health monitoring, remove configuration, and retry/backoff policy remain CP8 scope. Reconnecting must not claim connected before runtime verification.
 
 ### API & Gateway Settings
 
@@ -173,12 +173,18 @@ All interactive icons need content descriptions and at least 48 dp touch target.
 
 ### Tunnel
 
-- `NOT_CONFIGURED`: setup CTA.
+- `NOT_CONFIGURED`: token form + setup message; no masked placeholder or edit icon.
 - `DISCONNECTED`: connect CTA.
 - `CONNECTING`: progress, disable duplicate connect.
 - `CONNECTED`: disconnect/reconnect actions; show last verified health.
 - `RECONNECTING`: retry/backoff detail.
 - `ERROR`: safe error summary + retry/configuration CTA.
+- Connect is unavailable until a tunnel token is configured; show an inline token-required message.
+- Auto-reconnect is persisted as a non-secret preference, available only while connected, and cleared on disconnect.
+- Token edit controls are hidden/disabled while connecting, connected, or reconnecting.
+- A failed connection returns the connection switch to off and exposes only a short safe cause below the status.
+- Tunnel ingress uses the API Settings port and is not independently editable.
+- Connection, auto-reconnect, and tunnel-token sections use dividers; auto-reconnect is hidden while connection is off.
 
 ### Gateway
 
