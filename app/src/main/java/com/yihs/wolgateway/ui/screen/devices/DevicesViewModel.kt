@@ -71,8 +71,14 @@ class DevicesViewModel @Inject constructor(
     suspend fun saveDevice(device: Device): Boolean {
         return try {
             _fieldErrors.value = emptyMap()
-            if (device.id == 0L) repository.addDevice(device) else repository.updateDevice(device)
+            val newDeviceId = if (device.id == 0L) {
+                repository.addDevice(device)
+            } else {
+                repository.updateDevice(device)
+                null
+            }
             _events.emit(UiMessage(R.string.event_device_saved))
+            newDeviceId?.let(::checkDeviceStatusAfterSave)
             true
         } catch (error: InvalidDeviceException) {
             _fieldErrors.value = error.issues.associate { it.field to it.message }
@@ -123,6 +129,18 @@ class DevicesViewModel @Inject constructor(
         runDeviceAction(id) {
             statusCheckMutex.withLock { checkDeviceStatusUseCase(id) }
             _events.emit(UiMessage(R.string.event_status_checked))
+        }
+    }
+
+    private fun checkDeviceStatusAfterSave(id: Long) {
+        viewModelScope.launch {
+            try {
+                statusCheckMutex.withLock { checkDeviceStatusUseCase(id) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Status probing is best-effort; the saved device remains valid.
+            }
         }
     }
 

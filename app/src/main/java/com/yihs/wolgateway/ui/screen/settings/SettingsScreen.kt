@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -37,98 +38,97 @@ fun SettingsScreen(
             .padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(
-            stringResource(R.string.gateway_configuration),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onOpenApi),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                Text(stringResource(R.string.settings_api), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.settings_api_description),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SettingsLinkRow(
+                    title = stringResource(R.string.settings_api),
+                    description = stringResource(R.string.settings_api_description),
+                    onClick = onOpenApi,
                 )
+                HorizontalDivider()
+                SettingsLinkRow(
+                    title = stringResource(R.string.settings_tunnel),
+                    description = stringResource(R.string.tunnel_description_short),
+                    onClick = onOpenTunnel,
+                )
+                HorizontalDivider()
+                AutostartRow(
+                    title = stringResource(R.string.settings_auto_start_api),
+                    checked = state.autoStartApi,
+                    onCheckedChange = viewModel::setAutoStartApi,
+                )
+                HorizontalDivider()
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AutostartRow(
+                        title = stringResource(R.string.settings_auto_start_tunnel),
+                        checked = state.autoStartTunnel,
+                        enabled = state.tunnelTokenConfigured,
+                        onCheckedChange = viewModel::setAutoStartTunnel,
+                    )
+                    if (!state.tunnelTokenConfigured) {
+                        Text(
+                            stringResource(R.string.settings_auto_start_tunnel_token_required),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    } else {
+                        state.tunnelErrorMessage?.let {
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        } ?: state.tunnelError?.let {
+                            Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                HorizontalDivider()
+                SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))
+                HorizontalDivider()
+                SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
             }
         }
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenTunnel),
-        ) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.settings_tunnel), style = MaterialTheme.typography.titleMedium)
-                 Text(stringResource(R.string.tunnel_description_short), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        AutostartRow(
-            title = stringResource(R.string.settings_auto_start_api),
-            description = stringResource(R.string.settings_auto_start_api_description),
-            checked = state.autoStartApi,
-            onCheckedChange = viewModel::setAutoStartApi,
-        )
-        AutostartRow(
-            title = stringResource(R.string.settings_auto_start_tunnel),
-            description = stringResource(R.string.settings_auto_start_tunnel_description),
-            checked = state.autoStartTunnel,
-            enabled = state.tunnelTokenConfigured,
-            onCheckedChange = viewModel::setAutoStartTunnel,
-        )
-        if (!state.tunnelTokenConfigured) {
-            Text(
-                stringResource(R.string.settings_auto_start_tunnel_token_required),
-                color = MaterialTheme.colorScheme.error,
-            )
-        } else {
-            state.tunnelErrorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                ?: state.tunnelError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-        }
-        SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))
-        SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
+    }
+}
+
+@Composable
+private fun SettingsLinkRow(title: String, description: String, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
 }
 
 @Composable
 private fun AutostartRow(
     title: String,
-    description: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     enabled: Boolean = true,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
-        }
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 
 @Composable
 private fun SettingRow(label: String, value: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
+        Text(value, style = MaterialTheme.typography.bodySmall)
     }
 }

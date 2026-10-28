@@ -174,6 +174,7 @@ All interactive icons need content descriptions and at least 48 dp touch target.
 - Combined checks show the method(s), timestamp, and reason. A single failed ICMP check does not render the target offline.
 - Windows target default shows ICMP + TCP `3389`; explain that disabled/blocked RDP produces `UNKNOWN`. Port overrides remain visible in device details.
 - Devices auto-checks visible devices every 60 seconds. Auto-check pauses when Devices is not visible.
+- A newly saved device runs one best-effort status check immediately after persistence; save success is not reverted when probing fails.
 - Manual `Check status` is always available from Device Details; pull-to-refresh checks all saved devices.
 - After Wake, one-shot checks run at 5, 15, and 30 seconds, then stop.
 - Background service does not poll target devices.

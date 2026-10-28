@@ -35,7 +35,6 @@
     <string name="gateway_api_stopped">Stopped</string>
     <string name="gateway_tunnel_off">Off</string>
     <string name="gateway_service_standard">Standard</string>
-    <string name="gateway_configuration">Gateway configuration</string>
     <string name="settings_api_server">API server</string>
     <string name="settings_api">API</string>
     <string name="settings_api_description">Configure the local server and its authentication token</string>
@@ -94,9 +93,7 @@
     <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_diagnostics_value">Available after gateway services are configured</string>
     <string name="settings_auto_start_api">Auto-start API service</string>
-    <string name="settings_auto_start_api_description">Start the local API automatically after the phone boots.</string>
     <string name="settings_auto_start_tunnel">Auto-start tunnel</string>
-    <string name="settings_auto_start_tunnel_description">Connect the tunnel automatically after the API service starts.</string>
     <string name="settings_auto_start_tunnel_token_required">Set a tunnel token first on the Tunnel page.</string>
     <string name="gateway_service_channel">Gateway service</string>
     <string name="gateway_service_notification">Gateway service is running in the background.</string>
@@ -139,7 +136,6 @@
     <string name="details_availability_check">Availability check</string>
     <string name="details_method">Method</string>
     <string name="details_target_port">Target port</string>
-    <string name="details_packet_note">A sent packet confirms local delivery only. It does not confirm that the target is online.</string>
     <string name="status_method_icmp">ICMP</string>
     <string name="status_method_tcp">TCP</string>
     <string name="status_method_icmp_tcp">ICMP + TCP</string>

@@ -46,7 +46,7 @@ Membedakan masalah target PC, Android gateway, Ktor API, tunnel, permission, dan
 
 ### FR-01 Device management
 
-Devices menampilkan nama, IP, MAC, status `ONLINE`/`OFFLINE`/`UNKNOWN`, waktu pemeriksaan, dan hasil WoL terakhir. Mendukung search nama/IP/MAC, refresh, add, edit, detail, wake, status check, delete dengan konfirmasi, loading, empty, error, serta success feedback. Settings diakses dari action app bar Devices; Add Devices diakses dari FAB atau empty-state add action.
+Devices menampilkan nama, IP, MAC, status `ONLINE`/`OFFLINE`/`UNKNOWN`, waktu pemeriksaan, dan hasil WoL terakhir. Setelah device baru disimpan, aplikasi langsung menjalankan satu status check best-effort tanpa membatalkan hasil save jika probing gagal. Mendukung search nama/IP/MAC, refresh, add, edit, detail, wake, status check, delete dengan konfirmasi, loading, empty, error, serta success feedback. Settings diakses dari action app bar Devices; Add Devices diakses dari FAB atau empty-state add action.
 
 `ONLINE` berarti pemeriksaan yang dikonfigurasi memperoleh bukti konektivitas. `OFFLINE` hanya digunakan jika metode pemeriksaan memperoleh bukti kuat target tidak tersedia. `UNKNOWN` digunakan jika bukti tidak memadai, termasuk ICMP yang gagal atau diblokir.
 

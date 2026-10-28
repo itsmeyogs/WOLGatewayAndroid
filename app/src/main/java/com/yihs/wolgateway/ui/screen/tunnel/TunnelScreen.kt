@@ -19,7 +19,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,75 +53,100 @@ fun TunnelScreen(
         state.status == TunnelState.RECONNECTING
     val showTokenForm = !state.tokenConfigured || state.isEditingToken
 
+    DisposableEffect(Unit) {
+        onDispose(viewModel::resetTokenEdit)
+    }
+
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(stringResource(R.string.tunnel_connection), style = MaterialTheme.typography.titleMedium)
-                    Switch(
-                        checked = connectionChecked || state.autoStartTunnel,
-                        onCheckedChange = { enabled -> if (enabled) viewModel.connect() else viewModel.disconnect() },
-                        enabled = connectionEnabled,
-                    )
-                }
-                Text(statusText, style = MaterialTheme.typography.bodyLarge)
-                val connectionMessage = when {
-                    !state.tokenConfigured -> stringResource(R.string.tunnel_token_required)
-                    state.errorMessage != null -> state.errorMessage
-                    state.error != null -> state.error?.let { stringResource(it) }
-                    else -> null
-                }
-                connectionMessage?.let { errorMessage ->
-                    Text(
-                        errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                if (connectionChecked) {
-                    HorizontalDivider(modifier = Modifier.padding(top = 14.dp))
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.tunnel_connection), style = MaterialTheme.typography.titleMedium)
+                        Switch(
+                            checked = connectionChecked || state.autoStartTunnel,
+                            onCheckedChange = { enabled -> if (enabled) viewModel.connect() else viewModel.disconnect() },
+                            enabled = connectionEnabled,
+                        )
+                    }
+                    Text(statusText, style = MaterialTheme.typography.bodySmall)
+                    val connectionMessage = when {
+                        !state.tokenConfigured -> stringResource(R.string.tunnel_token_required)
+                        state.errorMessage != null -> state.errorMessage
+                        state.error != null -> state.error?.let { stringResource(it) }
+                        else -> null
+                    }
+                    connectionMessage?.let { errorMessage ->
+                        Text(
+                            errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+                if (connectionChecked) {
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(stringResource(R.string.tunnel_auto_reconnect), style = MaterialTheme.typography.titleMedium)
                             Text(
                                 stringResource(R.string.tunnel_auto_reconnect_help),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
                             )
                         }
                         Switch(checked = state.autoReconnect, onCheckedChange = viewModel::setAutoReconnect)
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(top = 14.dp))
-                Text(stringResource(R.string.tunnel_token), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-                if (showTokenForm) {
-                    OutlinedTextField(
-                        value = state.tokenInput,
-                        onValueChange = viewModel::onTokenInputChanged,
-                        label = { Text(stringResource(R.string.tunnel_token_input)) },
-                        supportingText = { Text(stringResource(state.tokenError ?: R.string.tunnel_token_help)) },
-                        isError = state.tokenError != null,
-                        singleLine = true,
-                        enabled = !connectionChecked,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Button(onClick = viewModel::saveToken, enabled = !connectionChecked) {
-                        Text(stringResource(R.string.action_save_token))
-                    }
-                } else {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(state.tokenPreview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        if (!connectionChecked) IconButton(onClick = viewModel::editToken) {
-                            Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_token))
+                HorizontalDivider()
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.tunnel_token), style = MaterialTheme.typography.titleMedium)
+                    if (showTokenForm) {
+                        OutlinedTextField(
+                            value = state.tokenInput,
+                            onValueChange = viewModel::onTokenInputChanged,
+                            label = { Text(stringResource(R.string.tunnel_token_input)) },
+                            supportingText = {
+                                Text(
+                                    stringResource(state.tokenError ?: R.string.tunnel_token_help),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            },
+                            isError = state.tokenError != null,
+                            singleLine = true,
+                            enabled = !connectionChecked,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = viewModel::saveToken, enabled = !connectionChecked) {
+                                Text(stringResource(R.string.action_save_token))
+                            }
+                            if (state.tokenConfigured) {
+                                TextButton(
+                                    onClick = viewModel::cancelTokenEdit,
+                                    enabled = !connectionChecked,
+                                ) {
+                                    Text(stringResource(R.string.action_cancel))
+                                }
+                            }
+                        }
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(state.tokenPreview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            if (!connectionChecked) IconButton(onClick = viewModel::editToken) {
+                                Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_token))
+                            }
                         }
                     }
                 }

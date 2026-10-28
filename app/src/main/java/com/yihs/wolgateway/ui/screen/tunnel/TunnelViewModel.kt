@@ -70,6 +70,15 @@ class TunnelViewModel @Inject constructor(
         _state.value = _state.value.copy(isEditingToken = true, tokenInput = "", tokenError = null)
     }
 
+    fun cancelTokenEdit() {
+        if (isConnectionActive() || !_state.value.tokenConfigured) return
+        _state.value = _state.value.copy(isEditingToken = false, tokenInput = "", tokenError = null)
+    }
+
+    fun resetTokenEdit() {
+        _state.value = _state.value.copy(isEditingToken = false, tokenInput = "", tokenError = null)
+    }
+
     fun saveToken() {
         if (isConnectionActive()) return
         val token = _state.value.tokenInput

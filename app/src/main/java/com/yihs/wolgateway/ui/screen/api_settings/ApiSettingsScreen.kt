@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,91 +60,89 @@ fun ApiSettingsScreen(
             .padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(stringResource(R.string.settings_api_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
-
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(stringResource(R.string.settings_api_server), style = MaterialTheme.typography.titleMedium)
-                    Switch(
-                        checked = state.serverState == ServerState.RUNNING || state.autoStartApi,
-                        onCheckedChange = viewModel::setServerEnabled,
-                        enabled = !state.isLoading,
-                    )
-                }
-                Text(
-                    stringResource(
-                        if (state.serverState == ServerState.RUNNING) R.string.settings_api_server_running
-                        else R.string.settings_api_server_stopped,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                UrlCard(
-                    url = apiUrl,
-                    onCopy = { onCopyText(apiUrl) },
-                    onEdit = {
-                        portDraft = state.port
-                        viewModel.clearPortError()
-                        showPortDialog = true
-                    },
-                )
-            }
-        }
-
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.settings_api_token), style = MaterialTheme.typography.titleMedium)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TokenModeOption(
-                        label = stringResource(R.string.settings_token_automatic),
-                        selected = state.tokenMode == ApiTokenMode.AUTOMATIC,
-                        onClick = { viewModel.selectTokenMode(ApiTokenMode.AUTOMATIC) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    TokenModeOption(
-                        label = stringResource(R.string.settings_token_custom),
-                        selected = state.tokenMode == ApiTokenMode.CUSTOM,
-                        onClick = { viewModel.selectTokenMode(ApiTokenMode.CUSTOM) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (state.tokenMode == ApiTokenMode.CUSTOM && state.isEditingCustomToken) {
-                    OutlinedTextField(
-                        value = state.tokenInput,
-                        onValueChange = viewModel::onTokenInputChanged,
-                        label = { Text(stringResource(R.string.settings_custom_token)) },
-                        supportingText = {
-                            Text(stringResource(state.tokenInputError ?: R.string.settings_custom_token_help))
-                        },
-                        isError = state.tokenInputError != null,
-                        singleLine = true,
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                    )
-                    Button(onClick = viewModel::saveCustomToken) {
-                        Text(stringResource(R.string.action_save_token))
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(stringResource(R.string.settings_api_server), style = MaterialTheme.typography.titleMedium)
+                        Switch(
+                            checked = state.serverState == ServerState.RUNNING || state.autoStartApi,
+                            onCheckedChange = viewModel::setServerEnabled,
+                            enabled = !state.isLoading,
+                        )
                     }
-                } else {
-                    TokenCard(
-                        preview = state.tokenPreview,
-                        onCopy = { viewModel.readToken()?.let(onCopyText) },
-                        onEdit = if (state.tokenMode == ApiTokenMode.CUSTOM) viewModel::editCustomToken else null,
-                        onRefresh = if (state.tokenMode == ApiTokenMode.AUTOMATIC) viewModel::generateToken else null,
+                    Text(
+                        stringResource(
+                            if (state.serverState == ServerState.RUNNING) R.string.settings_api_server_running
+                            else R.string.settings_api_server_stopped,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
                     )
+                    UrlRow(
+                        url = apiUrl,
+                        onCopy = { onCopyText(apiUrl) },
+                        onEdit = {
+                            portDraft = state.port
+                            viewModel.clearPortError()
+                            showPortDialog = true
+                        },
+                    )
+                }
+                HorizontalDivider()
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.settings_api_token), style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        TokenModeOption(
+                            label = stringResource(R.string.settings_token_automatic),
+                            selected = state.tokenMode == ApiTokenMode.AUTOMATIC,
+                            onClick = { viewModel.selectTokenMode(ApiTokenMode.AUTOMATIC) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        TokenModeOption(
+                            label = stringResource(R.string.settings_token_custom),
+                            selected = state.tokenMode == ApiTokenMode.CUSTOM,
+                            onClick = { viewModel.selectTokenMode(ApiTokenMode.CUSTOM) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (state.tokenMode == ApiTokenMode.CUSTOM && state.isEditingCustomToken) {
+                        OutlinedTextField(
+                            value = state.tokenInput,
+                            onValueChange = viewModel::onTokenInputChanged,
+                            label = { Text(stringResource(R.string.settings_custom_token)) },
+                            supportingText = {
+                                Text(
+                                    stringResource(state.tokenInputError ?: R.string.settings_custom_token_help),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            },
+                            isError = state.tokenInputError != null,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Button(onClick = viewModel::saveCustomToken) {
+                            Text(stringResource(R.string.action_save_token))
+                        }
+                    } else {
+                        TokenRow(
+                            preview = state.tokenPreview,
+                            onCopy = { viewModel.readToken()?.let(onCopyText) },
+                            onEdit = if (state.tokenMode == ApiTokenMode.CUSTOM) viewModel::editCustomToken else null,
+                            onRefresh = if (state.tokenMode == ApiTokenMode.AUTOMATIC) viewModel::generateToken else null,
+                        )
+                    }
                 }
             }
         }
@@ -176,17 +175,15 @@ fun ApiSettingsScreen(
 }
 
 @Composable
-private fun UrlCard(url: String, onCopy: () -> Unit, onEdit: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(url, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_url)) }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_api_port))
-            }
+private fun UrlRow(url: String, onCopy: () -> Unit, onEdit: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(url, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_url)) }
+        IconButton(onClick = onEdit) {
+            Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_api_port))
         }
     }
 }
@@ -200,22 +197,20 @@ private fun TokenModeOption(label: String, selected: Boolean, onClick: () -> Uni
 }
 
 @Composable
-private fun TokenCard(preview: String, onCopy: () -> Unit, onEdit: (() -> Unit)?, onRefresh: (() -> Unit)?) {
-    Surface(color = MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.small) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(preview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            IconButton(onClick = onCopy) {
-                Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_token))
-            }
-            if (onEdit != null) {
-                IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_token)) }
-            }
-            if (onRefresh != null) {
-                IconButton(onClick = onRefresh) { Icon(Icons.Filled.Refresh, stringResource(R.string.action_refresh_token)) }
-            }
+private fun TokenRow(preview: String, onCopy: () -> Unit, onEdit: (() -> Unit)?, onRefresh: (() -> Unit)?) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(preview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        IconButton(onClick = onCopy) {
+            Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_token))
+        }
+        if (onEdit != null) {
+            IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_token)) }
+        }
+        if (onRefresh != null) {
+            IconButton(onClick = onRefresh) { Icon(Icons.Filled.Refresh, stringResource(R.string.action_refresh_token)) }
         }
     }
 }
