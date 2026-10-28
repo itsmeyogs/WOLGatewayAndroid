@@ -10,6 +10,7 @@ data class TunnelUiState(
     val isEditingToken: Boolean = false,
     val tokenError: Int? = null,
     val autoReconnect: Boolean = false,
+    val autoStartTunnel: Boolean = false,
     val error: Int? = null,
     val errorMessage: String? = null,
 )

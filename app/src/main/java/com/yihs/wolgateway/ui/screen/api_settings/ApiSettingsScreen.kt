@@ -74,7 +74,7 @@ fun ApiSettingsScreen(
                 ) {
                     Text(stringResource(R.string.settings_api_server), style = MaterialTheme.typography.titleMedium)
                     Switch(
-                        checked = state.serverState == ServerState.RUNNING,
+                        checked = state.serverState == ServerState.RUNNING || state.autoStartApi,
                         onCheckedChange = viewModel::setServerEnabled,
                         enabled = !state.isLoading,
                     )

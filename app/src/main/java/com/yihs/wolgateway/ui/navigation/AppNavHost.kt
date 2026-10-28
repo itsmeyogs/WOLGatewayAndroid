@@ -36,6 +36,7 @@ import com.yihs.wolgateway.R
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
+import com.yihs.wolgateway.ui.screen.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +46,7 @@ fun AppNavHost() {
     val viewModel: DevicesViewModel = hiltViewModel()
     val apiSettingsViewModel: ApiSettingsViewModel = hiltViewModel()
     val tunnelViewModel: TunnelViewModel = hiltViewModel()
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
@@ -152,6 +154,7 @@ fun AppNavHost() {
             devicesViewModel = viewModel,
             apiSettingsViewModel = apiSettingsViewModel,
             tunnelViewModel = tunnelViewModel,
+            settingsViewModel = settingsViewModel,
             onCopyText = { text ->
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                     as android.content.ClipboardManager

@@ -91,11 +91,11 @@ Tunnel token dibuat, diganti, dicabut, dan disimpan dengan Android Keystore-back
 
 ### FR-07 Gateway lifecycle
 
-Pengguna dapat mengatur port, token, start/stop server, dan melihat status API melalui Settings. Bind address selalu `127.0.0.1` dan tidak dapat diedit; port default `8080` serta hanya rentang `1024..65535` yang valid. Server stopped sampai diaktifkan. Toggle start/stop tidak menampilkan snackbar sukses; snackbar dipakai untuk port/configuration atau server bind error. Kegagalan bind tidak boleh menghentikan process Android. Foreground-service hosting tetap CP9.
+Pengguna dapat mengatur port, token, start/stop server, dan melihat status API melalui Settings. Bind address selalu `127.0.0.1` dan tidak dapat diedit; port default `8080` serta hanya rentang `1024..65535` yang valid. Server stopped sampai diaktifkan. Toggle start/stop tidak menampilkan snackbar sukses; snackbar dipakai untuk port/configuration atau server bind error. Kegagalan bind tidak boleh menghentikan process Android. Foreground-service hosting tersedia pada CP9 untuk Standard Mode. API autostart dan tunnel autostart dapat diaktifkan dari Settings; tunnel autostart memerlukan token tersimpan dan otomatis mengaktifkan API service.
 
 ### FR-08 Background
 
-Foreground service dengan notification persisten digunakan untuk operasi koneksi persisten. WorkManager hanya untuk pekerjaan tertunda/recovery yang sesuai. Boot recovery dan network recovery bersifat best-effort serta mengikuti pembatasan OS/OEM.
+Foreground service dengan notification persisten digunakan untuk operasi koneksi persisten. CP9 memakai `GatewayService`, `GatewayCoordinator`, dan `BOOT_COMPLETED` receiver untuk Standard Mode. Notification membedakan API-only dan API+tunnel. Menyalakan tunnel memastikan API service aktif; mematikan API memutus tunnel. `POST_NOTIFICATIONS` hanya diminta pada Android 13/API 33+. Boot recovery dan network recovery bersifat best-effort serta mengikuti pembatasan OS/OEM dan Android foreground-service restrictions. Root autostart ditunda ke CP10.
 
 ### FR-09 Root Mode
 

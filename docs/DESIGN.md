@@ -38,7 +38,7 @@ flowchart TD
 
 - No bottom `NavigationBar` is used. The Devices app-bar action opens Settings; the Devices FAB and empty-state add action open Add Devices.
 - Add Devices starts a local-network scan on entry, shows reachable results directly, and always provides manual registration.
-- `Settings` groups Tunnel, API/Gateway, Background/Root, and Diagnostics.
+- `Settings` groups Tunnel, API/Gateway, Background/Root, and Diagnostics. Background controls include separate API-service and tunnel autostart switches; tunnel autostart is unavailable until a tunnel token is configured and reports safe connection errors inline. Turning on Tunnel also turns on the API service; turning off API disconnects Tunnel. Foreground notification copy distinguishes API-only from API+tunnel.
 - Devices remains the start destination.
 
 ## 3. Screen inventory

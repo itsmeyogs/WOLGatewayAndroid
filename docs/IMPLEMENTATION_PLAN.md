@@ -111,10 +111,10 @@ Acceptance: `PASS`; CP7 implementation and Android ARM64 end-to-end validation a
 Implement adapter/controller, state machine, secure token storage, health monitoring, retry/backoff/jitter, token replacement, duplicate prevention, cleanup, and the tunnel management UI based on CP7 result. The tunnel screen uses separated Connection, conditional Auto reconnect, and Tunnel token sections with dividers. Fresh install shows the token form directly; no editable origin, manual reconnect action, or token copy exists. Tunnel origin follows the API Settings port at `127.0.0.1:<port>`. Connect remains disabled until a token is saved; token editing is locked during an active connection attempt or connection; connection errors occupy the Connection message slot. Devices dashboard consumes the shared controller Flow through `DevicesViewModel` and renders the live tunnel state in `GatewayStatusStrip`.
 Acceptance: connect/disconnect/reconnect verified, including process crash and network loss.
 
-### CP9 — Background service
+### CP9 — Background service — user-approved; device validation pending
 
-Implement foreground service, notification, server/tunnel coordinator, network callbacks, boot best-effort, and battery/OEM diagnostics.
-Acceptance: target Android versions/devices tested; limitations documented.
+Implemented Standard Mode foreground service, persistent notification, shared API/tunnel coordinator, default-network recovery callback, and best-effort `BOOT_COMPLETED` startup. Settings persist API-service and tunnel autostart switches. Tunnel autostart requires a saved token and starts the API service because the tunnel origin is loopback. Root mode is deliberately excluded; root startup remains CP10.
+Acceptance: user-approved after implementation review. Automated build/test and target Android/OEM boot, notification permission, battery optimization, process death, API-only, and API+tunnel validation remain pending. Evidence: `reports/checkpoints/CP9-background-service.md`.
 
 ### CP10 — Root Mode
 

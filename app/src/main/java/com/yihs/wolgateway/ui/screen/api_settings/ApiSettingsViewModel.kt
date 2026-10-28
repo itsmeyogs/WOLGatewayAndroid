@@ -8,24 +8,32 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.yihs.wolgateway.R
+import com.yihs.wolgateway.androidservice.GatewayService
+import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.server.ServerState
+import com.yihs.wolgateway.tunnel.controller.TunnelController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class ApiSettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val preferences: DataStore<Preferences>,
     private val gatewayServer: GatewayServer,
+    private val tunnelController: TunnelController,
     private val tokenStore: ApiTokenStore,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ApiSettingsUiState())
@@ -48,10 +56,19 @@ class ApiSettingsViewModel @Inject constructor(
             _state.value = ApiSettingsUiState(
                 port = (values[PORT] ?: ApiSettingsUiState.DEFAULT_PORT).toString(),
                 serverState = gatewayServer.state.value,
+                autoStartApi = values[GatewayStartupPreferences.AUTO_START_API] == true,
                 tokenMode = savedTokenMode,
                 tokenPreview = maskToken(token),
                 isLoading = false,
             )
+            combine(preferences.data, gatewayServer.state) { updatedValues, serverState ->
+                _state.value.copy(
+                    port = (updatedValues[PORT] ?: ApiSettingsUiState.DEFAULT_PORT).toString(),
+                    serverState = serverState,
+                    autoStartApi = updatedValues[GatewayStartupPreferences.AUTO_START_API] == true,
+                    isLoading = false,
+                )
+            }.collect { _state.value = it }
         }
     }
 
@@ -94,8 +111,14 @@ class ApiSettingsViewModel @Inject constructor(
 
     fun stopServer() {
         viewModelScope.launch {
+            tunnelController.disconnect()
             gatewayServer.stop()
-            savePreferences(serverEnabled = false, port = _state.value.port.toIntOrNull() ?: ApiSettingsUiState.DEFAULT_PORT)
+            savePreferences(
+                serverEnabled = false,
+                port = _state.value.port.toIntOrNull() ?: ApiSettingsUiState.DEFAULT_PORT,
+                clearAutostart = true,
+            )
+            GatewayService.stop(context)
             _state.value = _state.value.copy(serverState = gatewayServer.state.value)
         }
     }
@@ -197,6 +220,7 @@ class ApiSettingsViewModel @Inject constructor(
             gatewayServer.configure(GatewayServerConfig(port!!))
             savePreferences(serverEnabled = startAfterSave, port = port)
             if (startAfterSave) gatewayServer.start()
+            if (startAfterSave) GatewayService.start(context)
             _state.value = _state.value.copy(
                 port = port.toString(),
                 serverState = gatewayServer.state.value,
@@ -214,10 +238,15 @@ class ApiSettingsViewModel @Inject constructor(
     private suspend fun savePreferences(
         serverEnabled: Boolean,
         port: Int = _state.value.port.toIntOrNull() ?: ApiSettingsUiState.DEFAULT_PORT,
+        clearAutostart: Boolean = false,
     ) {
         preferences.edit {
             it[SERVER_ENABLED] = serverEnabled
             it[PORT] = port
+            if (clearAutostart) {
+                it[GatewayStartupPreferences.AUTO_START_API] = false
+                it[GatewayStartupPreferences.AUTO_START_TUNNEL] = false
+            }
         }
     }
 

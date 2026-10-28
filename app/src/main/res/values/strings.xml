@@ -93,6 +93,15 @@
     <string name="settings_background_value">Standard Mode</string>
     <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_diagnostics_value">Available after gateway services are configured</string>
+    <string name="settings_auto_start_api">Auto-start API service</string>
+    <string name="settings_auto_start_api_description">Start the local API automatically after the phone boots.</string>
+    <string name="settings_auto_start_tunnel">Auto-start tunnel</string>
+    <string name="settings_auto_start_tunnel_description">Connect the tunnel automatically after the API service starts.</string>
+    <string name="settings_auto_start_tunnel_token_required">Set a tunnel token first on the Tunnel page.</string>
+    <string name="gateway_service_channel">Gateway service</string>
+    <string name="gateway_service_notification">Gateway service is running in the background.</string>
+    <string name="gateway_service_notification_api">API service is running in the background.</string>
+    <string name="gateway_service_notification_api_tunnel">API service and tunnel are running in the background.</string>
 
     <string name="search_devices_label">Search devices</string>
     <string name="search_devices_placeholder">Search name, IP, or MAC</string>

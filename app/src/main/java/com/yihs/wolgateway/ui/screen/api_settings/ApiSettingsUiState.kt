@@ -5,6 +5,7 @@ import com.yihs.wolgateway.gateway.server.ServerState
 data class ApiSettingsUiState(
     val port: String = DEFAULT_PORT.toString(),
     val serverState: ServerState = ServerState.STOPPED,
+    val autoStartApi: Boolean = false,
     val tokenMode: ApiTokenMode = ApiTokenMode.AUTOMATIC,
     val tokenPreview: String = "••••••••",
     val tokenInput: String = "",
