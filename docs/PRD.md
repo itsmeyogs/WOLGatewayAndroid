@@ -83,7 +83,7 @@ Tunnel mendukung token, connect, disconnect, reconnect, auto-connect sesuai konf
 
 `NOT_CONFIGURED`, `DISCONNECTED`, `CONNECTING`, `CONNECTED`, `RECONNECTING`, `ERROR`.
 
-Cloudflare domain/public hostname ditunda sampai gateway lokal stabil. CP7 memvalidasi runtime dan forwarding lokal terlebih dahulu, lalu public hostname. [`roufsweb/cloudflared-android`](https://github.com/roufsweb/cloudflared-android) digunakan sebagai referensi teknis saja. Jika runtime native diperlukan, binary dibangun sendiri dari source Cloudflare/cloudflared yang dipin untuk ARM64 Android; provenance, patch, toolchain, checksum, dan license dicatat.
+Cloudflare domain/public hostname ditunda sampai gateway lokal stabil. CP7 memvalidasi runtime dan forwarding lokal terlebih dahulu, lalu public hostname. [`roufsweb/cloudflared-android`](https://github.com/roufsweb/cloudflared-android) digunakan sebagai referensi teknis saja. Official Cloudflare/cloudflared `2026.10.0` commit `18cdfe0a6fc7b72a0702d255a1f984e776ce0498` dibangun untuk ARM64 Android dengan Go `1.26.0`, `GOOS=android`, `GOARCH=arm64`, `CGO_ENABLED=0`; artifact SHA-256 `C1D7F45057016C6771655316A5AA114FF4419D06FA194580544004E4EE199E6D`. Runtime sudah dibundle, di-wire, dan divalidasi pada perangkat ARM64 Android 10 non-root untuk native execution, tunnel registration, local forwarding, serta lifecycle connect/disconnect.
 
 ### FR-06 Secret dan retry
 
@@ -121,7 +121,7 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - Tidak ada endpoint shell/arbitrary process execution.
 - Bind address aman sebagai default.
 - Request validation dan batas ukuran diterapkan di trust boundary.
-- Native binary/vendor dependency dipin dan diverifikasi sebelum dipakai.
+- Native binary/vendor dependency dipin dan diverifikasi sebelum dipakai. CP7 runtime provenance, checksum, and license are recorded in `reports/checkpoints/CP7-tunnel.md`; artifact is not accepted as usable until device validation passes.
 - Root tidak diminta tanpa consent.
 
 ## 7. Non-functional requirements

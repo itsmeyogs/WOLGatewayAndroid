@@ -1,6 +1,6 @@
 # UI/UX Design — WoL Gateway
 
-**Status:** Approved specification — CP3 UI implementation completed; CP4/CP5 behavior remains deferred
+**Status:** Approved specification — CP3 UI and CP7 tunnel page/runtime implemented and validated; CP4/CP5 behavior remains deferred
 **Tanggal:** 2026-10-26
 
 ## 1. Design direction
@@ -83,7 +83,7 @@ Scrollable form with name, IPv4 address, MAC, broadcast address, WoL port, optio
 
 ### Tunnel Management
 
-State header with icon + text + explanatory sentence. Token field masked by default, show/hide action, save, connect/reconnect/disconnect, remove configuration. Show last connection time and redacted last error. Reconnecting includes backoff/retry explanation, not a false “connected” badge.
+State header with text + explanatory sentence. Token field remains masked, supports encrypted save and replacement, and never copies the full secret. Connect/reconnect/disconnect are available; runtime errors are redacted. Last connection time, health monitoring, remove configuration, and retry/backoff policy remain CP8 scope. Reconnecting must not claim connected before runtime verification.
 
 ### API & Gateway Settings
 

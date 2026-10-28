@@ -100,8 +100,11 @@ Acceptance: automated API integration/auth tests pass; user approved CP6 after s
 
 ### CP7 — Cloudflare Tunnel Technical Spike
 
-Use `roufsweb/cloudflared-android` only as technical reference. Build the runtime only from pinned official Cloudflare/cloudflared source for ARM64 Android. Verify native loading, start/stop, DNS workaround, token redaction, local Ktor forwarding, network recovery, foreground lifecycle, and target SDK interaction. Local fixture must pass before public hostname/domain testing.
-Acceptance: PASS/FAIL/BLOCKED report. Do not continue CP8 on unresolved FAIL.
+**Status: PASS (implementation and device validation user-approved).** `roufsweb/cloudflared-android` remains technical reference only. Official Cloudflare `cloudflared` source `2026.10.0` was checked out at commit `18cdfe0a6fc7b72a0702d255a1f984e776ce0498` and built with Go `1.26.0` using `GOOS=android GOARCH=arm64 CGO_ENABLED=0`. The resulting ARM64 ELF is packaged as `jniLibs/arm64-v8a/libcloudflared.so` and executed from Android `ApplicationInfo.nativeLibraryDir`; app cache/code cache is not used because it may be mounted `noexec`. Tunnel token is written to a temporary app-private token file and passed through `--token-file`; token output is redacted before drain. An app-private ingress config forwards to the configured local Ktor origin. CP7 covers the Android runtime implementation plus end-to-end device validation.
+
+Automated gates pass: `:app:assembleDebug`, `:app:testDebugUnitTest`, source build, ARM64 ELF inspection, and token-redaction unit test. User-confirmed device validation on ARM64 Android 10 passes after the Android-compatible static IPv4 edge fallback; native loading, tunnel registration, forwarding, and lifecycle validation are accepted. Runtime readiness requires `Registered tunnel connection`, with a 20-second startup timeout and serialized lifecycle operations. Runtime diagnostics use Logcat tag `WolGatewayTunnel`; token values are never logged. Evidence: `reports/checkpoints/CP7-tunnel.md`.
+
+Acceptance: `PASS`; CP7 implementation and Android ARM64 end-to-end validation accepted by the user. Do not treat the static edge list as a general-purpose production discovery mechanism outside this validated runtime scope.
 
 ### CP8 — Tunnel management
 

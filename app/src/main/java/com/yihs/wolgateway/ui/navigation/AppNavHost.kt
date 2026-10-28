@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
+import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +42,7 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val viewModel: DevicesViewModel = hiltViewModel()
     val apiSettingsViewModel: ApiSettingsViewModel = hiltViewModel()
+    val tunnelViewModel: TunnelViewModel = hiltViewModel()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
@@ -55,6 +57,7 @@ fun AppNavHost() {
         Screen.AddDevices.route -> stringResource(R.string.screen_add_devices)
         Screen.Settings.route -> stringResource(R.string.screen_settings)
         Screen.ApiSettings.route -> stringResource(R.string.screen_api_settings)
+        Screen.Tunnel.route -> stringResource(R.string.screen_tunnel)
         Screen.Details.route -> stringResource(R.string.screen_device_details)
         Screen.Form.route -> if (selectedDeviceId == null) {
             stringResource(R.string.screen_add_device)
@@ -75,6 +78,11 @@ fun AppNavHost() {
             snackbarHostState.showSnackbar(
                 context.resources.getString(message.resourceId),
             )
+        }
+    }
+    LaunchedEffect(Unit) {
+        tunnelViewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(context.resources.getString(message.resourceId))
         }
     }
 
@@ -140,6 +148,7 @@ fun AppNavHost() {
             onCheckStatus = viewModel::checkDeviceStatus,
             devicesViewModel = viewModel,
             apiSettingsViewModel = apiSettingsViewModel,
+            tunnelViewModel = tunnelViewModel,
             onCopyText = { text ->
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                     as android.content.ClipboardManager

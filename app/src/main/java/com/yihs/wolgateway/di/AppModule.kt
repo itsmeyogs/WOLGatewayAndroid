@@ -17,6 +17,10 @@ import com.yihs.wolgateway.gateway.server.KtorGatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.auth.AndroidApiTokenStore
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
+import com.yihs.wolgateway.tunnel.adapter.CloudflareTunnelRuntime
+import com.yihs.wolgateway.tunnel.adapter.TunnelRuntime
+import com.yihs.wolgateway.tunnel.secure.AndroidTunnelTokenStore
+import com.yihs.wolgateway.tunnel.secure.TunnelTokenStore
 import com.yihs.wolgateway.network.discovery.AndroidNetworkDiscovery
 import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import com.yihs.wolgateway.network.status.AndroidStatusChecker
@@ -59,6 +63,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideApiTokenStore(store: AndroidApiTokenStore): ApiTokenStore = store
+
+    @Provides
+    @Singleton
+    fun provideTunnelRuntime(runtime: CloudflareTunnelRuntime): TunnelRuntime = runtime
+
+    @Provides
+    @Singleton
+    fun provideTunnelTokenStore(store: AndroidTunnelTokenStore): TunnelTokenStore = store
 
     @Provides
     @Singleton

@@ -15,6 +15,8 @@ import com.yihs.wolgateway.ui.screen.settings.SettingsScreen
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsScreen
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
+import com.yihs.wolgateway.ui.screen.tunnel.TunnelScreen
+import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
 
 @Composable
 fun NavGraph(
@@ -24,6 +26,7 @@ fun NavGraph(
     onCheckStatus: (Long) -> Unit,
     devicesViewModel: DevicesViewModel,
     apiSettingsViewModel: ApiSettingsViewModel,
+    tunnelViewModel: TunnelViewModel,
     onCopyText: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -49,11 +52,18 @@ fun NavGraph(
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onOpenApi = { navController.navigate(Screen.ApiSettings.route) },
+                onOpenTunnel = { navController.navigate(Screen.Tunnel.route) },
             )
         }
         composable(Screen.ApiSettings.route) {
             ApiSettingsScreen(
                 viewModel = apiSettingsViewModel,
+                onCopyText = onCopyText,
+            )
+        }
+        composable(Screen.Tunnel.route) {
+            TunnelScreen(
+                viewModel = tunnelViewModel,
                 onCopyText = onCopyText,
             )
         }

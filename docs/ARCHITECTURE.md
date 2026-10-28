@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** CP6 REST API and API Settings wiring implemented; tunnel, background service, and root layers remain planned
+**Status:** CP6 REST API and API Settings wiring implemented; CP7 Cloudflare runtime/page implemented and ARM64 Android validation passed; background service and root layers remain planned
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -162,7 +162,7 @@ Auth middleware berjalan sebelum route sensitif. Token dibuat otomatis saat inis
 
 ### Decision
 
-`TECHNICAL SPIKE` pada CP7. Tidak memasukkan source/binary referensi ke aplikasi. Jika diperlukan, build binary sendiri dari source Cloudflare/cloudflared yang dipin untuk ARM64 Android, dengan toolchain, patch, checksum, provenance, dan license terdokumentasi. Adapter interface memungkinkan fallback external tunnel atau runtime lain tanpa mengubah domain/API. Public hostname diuji setelah gateway lokal stabil.
+CP7 tetap menjadi `TECHNICAL SPIKE`. Source/binary `roufsweb/cloudflared-android` tidak digunakan. Official Cloudflare/cloudflared `2026.10.0` pada commit `18cdfe0a6fc7b72a0702d255a1f984e776ce0498` dibuild sendiri untuk Android ARM64 dengan Go `1.26.0`, `GOOS=android`, `GOARCH=arm64`, dan `CGO_ENABLED=0`; SHA-256 artifact `C1D7F45057016C6771655316A5AA114FF4419D06FA194580544004E4EE199E6D`. Binary dibundel sebagai `jniLibs/arm64-v8a/libcloudflared.so` dan dijalankan langsung dari `ApplicationInfo.nativeLibraryDir`; app cache/code cache tidak digunakan karena dapat dimount `noexec`. Token memakai encrypted Android Keystore storage, temporary app-private token file, dan `--token-file`; tidak ditempatkan di command argument. Config ingress app-private meneruskan traffic ke local Ktor origin. Adapter interface tetap memungkinkan runtime lain tanpa mengubah domain/API. Android ARM64 end-to-end validation passed on the target non-root device.
 
 ## 8. Status semantics
 

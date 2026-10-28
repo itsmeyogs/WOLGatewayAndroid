@@ -18,6 +18,7 @@ import com.yihs.wolgateway.R
 @Composable
 fun SettingsScreen(
     onOpenApi: () -> Unit,
+    onOpenTunnel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -48,7 +49,16 @@ fun SettingsScreen(
                 )
             }
         }
-        SettingRow(stringResource(R.string.settings_tunnel), stringResource(R.string.settings_tunnel_value))
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenTunnel),
+        ) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.settings_tunnel), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.settings_tunnel_value), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))
         SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
     }
