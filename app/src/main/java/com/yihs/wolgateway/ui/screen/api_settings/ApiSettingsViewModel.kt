@@ -14,7 +14,6 @@ import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.server.ServerState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.net.InetAddress
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +46,6 @@ class ApiSettingsViewModel @Inject constructor(
             }
             val token = tokenStore.read() ?: tokenStore.getOrCreate()
             _state.value = ApiSettingsUiState(
-                bindAddress = values[BIND_ADDRESS] ?: ApiSettingsUiState.DEFAULT_BIND_ADDRESS,
                 port = (values[PORT] ?: ApiSettingsUiState.DEFAULT_PORT).toString(),
                 serverState = gatewayServer.state.value,
                 tokenMode = savedTokenMode,
@@ -57,31 +55,30 @@ class ApiSettingsViewModel @Inject constructor(
         }
     }
 
-    fun onBindAddressChanged(value: String) {
-        _state.value = _state.value.copy(bindAddress = value, bindError = false)
-    }
-
     fun onPortChanged(value: String) {
         _state.value = _state.value.copy(port = value.filter(Char::isDigit), portError = false)
+    }
+
+    fun clearPortError() {
+        _state.value = _state.value.copy(portError = false)
     }
 
     fun setServerEnabled(enabled: Boolean) {
         if (enabled) startServer() else stopServer()
     }
 
-    fun saveConfiguration(): Boolean {
+    fun saveConfiguration(portInput: String = _state.value.port): Boolean {
         val current = _state.value
-        val port = current.port.toIntOrNull()
-        val bind = current.bindAddress.trim()
-        val validPort = port in 1..65_535
-        val validBind = isValidBindAddress(bind)
-        if (!validPort || !validBind) {
-            _state.value = current.copy(portError = !validPort, bindError = !validBind)
+        val port = portInput.toIntOrNull()
+        val validPort = ApiSettingsUiState.isValidPort(port)
+        if (!validPort) {
+            _state.value = current.copy(portError = true)
             viewModelScope.launch { _events.emit(ApiSettingsMessage(R.string.event_api_configuration_invalid)) }
             return false
         }
         viewModelScope.launch {
             applyConfiguration(
+                portInput = portInput,
                 startAfterSave = current.serverState == ServerState.RUNNING,
                 showSuccessFeedback = true,
             )
@@ -98,7 +95,7 @@ class ApiSettingsViewModel @Inject constructor(
     fun stopServer() {
         viewModelScope.launch {
             gatewayServer.stop()
-            savePreferences(serverEnabled = false)
+            savePreferences(serverEnabled = false, port = _state.value.port.toIntOrNull() ?: ApiSettingsUiState.DEFAULT_PORT)
             _state.value = _state.value.copy(serverState = gatewayServer.state.value)
         }
     }
@@ -183,26 +180,24 @@ class ApiSettingsViewModel @Inject constructor(
     }
 
     private suspend fun applyConfiguration(
+        portInput: String = _state.value.port,
         startAfterSave: Boolean,
         showSuccessFeedback: Boolean,
     ) {
         val current = _state.value
-        val port = current.port.toIntOrNull()
-        val bind = current.bindAddress.trim()
-        val validPort = port in 1..65_535
-        val validBind = isValidBindAddress(bind)
-        if (!validPort || !validBind) {
-            _state.value = current.copy(portError = !validPort, bindError = !validBind)
+        val port = portInput.toIntOrNull()
+        val validPort = ApiSettingsUiState.isValidPort(port)
+        if (!validPort) {
+            _state.value = current.copy(portError = true)
             _events.emit(ApiSettingsMessage(R.string.event_api_configuration_invalid))
             return
         }
         try {
             gatewayServer.stop()
-            gatewayServer.configure(GatewayServerConfig(bind, port!!))
-            savePreferences(serverEnabled = startAfterSave, bindAddress = bind, port = port)
+            gatewayServer.configure(GatewayServerConfig(port!!))
+            savePreferences(serverEnabled = startAfterSave, port = port)
             if (startAfterSave) gatewayServer.start()
             _state.value = _state.value.copy(
-                bindAddress = bind,
                 port = port.toString(),
                 serverState = gatewayServer.state.value,
             )
@@ -211,34 +206,25 @@ class ApiSettingsViewModel @Inject constructor(
             }
         } catch (_: Exception) {
             _state.value = _state.value.copy(serverState = ServerState.STOPPED)
-            savePreferences(serverEnabled = false, bindAddress = bind, port = port ?: ApiSettingsUiState.DEFAULT_PORT)
+            savePreferences(serverEnabled = false, port = port ?: ApiSettingsUiState.DEFAULT_PORT)
             _events.emit(ApiSettingsMessage(R.string.event_api_server_failed))
         }
     }
 
     private suspend fun savePreferences(
         serverEnabled: Boolean,
-        bindAddress: String = _state.value.bindAddress,
         port: Int = _state.value.port.toIntOrNull() ?: ApiSettingsUiState.DEFAULT_PORT,
     ) {
         preferences.edit {
             it[SERVER_ENABLED] = serverEnabled
-            it[BIND_ADDRESS] = bindAddress
             it[PORT] = port
         }
     }
-
-    private fun isValidBindAddress(value: String): Boolean = runCatching {
-        if (value.isBlank()) error("blank bind address")
-        InetAddress.getByName(value)
-        true
-    }.getOrDefault(false)
 
     private fun maskToken(token: String): String = "${token.take(TOKEN_PREVIEW_LENGTH)}••••••••"
 
     private companion object {
         val SERVER_ENABLED = booleanPreferencesKey("api_server_enabled")
-        val BIND_ADDRESS = stringPreferencesKey("api_bind_address")
         val PORT = intPreferencesKey("api_port")
         val TOKEN_MODE = stringPreferencesKey("api_token_mode")
         const val TOKEN_MODE_AUTOMATIC = "automatic"

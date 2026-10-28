@@ -2,7 +2,7 @@
 
 Base path: `/api/v1`.
 
-Default server bind: `127.0.0.1:8080`. The API server is stopped by default and is started from Settings. All device routes require:
+Default server bind: `127.0.0.1:8080`. Bind address is fixed to loopback; only the port can be changed, using `1024..65535`. The API server is stopped by default and is started from Settings. All device routes require:
 
 ```http
 Authorization: Bearer <api-token>
@@ -73,7 +73,7 @@ Request bodies are limited to 64 KiB when `Content-Length` is supplied. Handlers
 ## Manual verification
 
 1. Install the debug APK and open **Settings → API settings**.
-2. Keep base URL `http://127.0.0.1`, port `8080`, and automatic token mode, then enable the API server. The token is generated and stored automatically on first initialization.
+2. Keep the fixed URL `http://127.0.0.1`, use port `8080` or another port from `1024..65535`, and keep automatic token mode, then enable the API server. The token is generated and stored automatically on first initialization.
 3. For an emulator or USB-connected device, forward the port:
 
 ```powershell
@@ -128,3 +128,5 @@ curl.exe -i http://127.0.0.1:8080/api/v1/devices -H 'Authorization: Bearer wrong
 Both must return `401`. Copy the masked token from API Settings for protected requests. Automatic token refresh and custom-token save are Settings-only operations.
 
 The API does not expose a token-management endpoint. Automatic generation, automatic refresh, custom-token save, and copy are API Settings-only operations; tokens remain masked in the UI. An unsaved custom-token selection is discarded when leaving the screen.
+
+The API Settings page does not expose bind-address editing. A port below `1024`, an invalid port, or a port already in use must produce an error and leave the server stopped; it must not terminate the Android process.

@@ -44,8 +44,9 @@ fun ApiSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showUrlDialog by remember { mutableStateOf(false) }
-    val apiUrl = "http://${state.bindAddress}:${state.port}"
+    var showPortDialog by remember { mutableStateOf(false) }
+    var portDraft by remember { mutableStateOf(state.port) }
+    val apiUrl = "http://${ApiSettingsUiState.DEFAULT_BIND_ADDRESS}:${state.port}"
 
     DisposableEffect(Unit) {
         onDispose(viewModel::resetUncommittedTokenMode)
@@ -88,7 +89,11 @@ fun ApiSettingsScreen(
                 UrlCard(
                     url = apiUrl,
                     onCopy = { onCopyText(apiUrl) },
-                    onEdit = { showUrlDialog = true },
+                    onEdit = {
+                        portDraft = state.port
+                        viewModel.clearPortError()
+                        showPortDialog = true
+                    },
                 )
             }
         }
@@ -144,41 +149,27 @@ fun ApiSettingsScreen(
         }
     }
 
-    if (showUrlDialog) {
+    if (showPortDialog) {
         AlertDialog(
-            onDismissRequest = { showUrlDialog = false },
-            title = { Text(stringResource(R.string.dialog_edit_api_url_title)) },
+            onDismissRequest = { showPortDialog = false },
+            title = { Text(stringResource(R.string.dialog_edit_port_title)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = "http://${state.bindAddress}",
-                        onValueChange = { value ->
-                            viewModel.onBindAddressChanged(
-                                value.removePrefix("http://").removePrefix("https://"),
-                            )
-                        },
-                        label = { Text(stringResource(R.string.settings_base_url)) },
-                        supportingText = { Text(stringResource(R.string.settings_base_url_help)) },
-                        isError = state.bindError,
-                        singleLine = true,
-                    )
-                    OutlinedTextField(
-                        value = state.port,
-                        onValueChange = viewModel::onPortChanged,
-                        label = { Text(stringResource(R.string.settings_port)) },
-                        supportingText = { if (state.portError) Text(stringResource(R.string.validation_port_invalid)) },
-                        isError = state.portError,
-                        singleLine = true,
-                    )
-                }
+                OutlinedTextField(
+                    value = portDraft,
+                    onValueChange = { portDraft = it.filter(Char::isDigit) },
+                    label = { Text(stringResource(R.string.settings_port_short)) },
+                    supportingText = { if (state.portError) Text(stringResource(R.string.validation_port_invalid)) },
+                    isError = state.portError,
+                    singleLine = true,
+                )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (viewModel.saveConfiguration()) showUrlDialog = false
-                }) { Text(stringResource(R.string.action_save_settings)) }
+                    if (viewModel.saveConfiguration(portDraft)) showPortDialog = false
+                }) { Text(stringResource(R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showUrlDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { showPortDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             },
         )
     }
@@ -193,7 +184,9 @@ private fun UrlCard(url: String, onCopy: () -> Unit, onEdit: () -> Unit) {
         ) {
             Text(url, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
             IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_url)) }
-            IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_api_url)) }
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_api_port))
+            }
         }
     }
 }

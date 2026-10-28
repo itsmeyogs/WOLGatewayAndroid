@@ -16,8 +16,12 @@ import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
 import com.yihs.wolgateway.gateway.routing.configureApiRoutes
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.runBlocking
+import java.net.InetAddress
+import java.net.ServerSocket
 
 @Singleton
 class KtorGatewayServer @Inject constructor(
@@ -44,9 +48,12 @@ class KtorGatewayServer @Inject constructor(
     override fun start() {
         synchronized(lock) {
             if (_state.value == ServerState.RUNNING) return
+            // CIO reports some Android bind failures from its worker coroutine. Probe first so
+            // invalid or unavailable ports remain a recoverable UI error instead of a process crash.
+            ServerSocket(config.port, 0, InetAddress.getByName(LOOPBACK_ADDRESS)).use { }
             engine = embeddedServer(
                 CIO,
-                host = config.bindAddress,
+                host = LOOPBACK_ADDRESS,
                 port = config.port,
                 watchPaths = emptyList(),
             ) {
@@ -56,7 +63,17 @@ class KtorGatewayServer @Inject constructor(
                 configureApiErrorHandling()
                 configureApiRoutes(repository, tokenStore, wakeDevice, checkDeviceStatus)
             }
-                .also { it.start(wait = false) }
+                .also {
+                    try {
+                        it.start(wait = false)
+                        runBlocking(Dispatchers.IO) { it.engine.resolvedConnectors() }
+                    } catch (error: Exception) {
+                        it.stop(gracePeriodMillis = 0, timeoutMillis = 1_000)
+                        engine = null
+                        _state.value = ServerState.STOPPED
+                        throw error
+                    }
+                }
             _state.value = ServerState.RUNNING
         }
     }
@@ -67,5 +84,9 @@ class KtorGatewayServer @Inject constructor(
             engine = null
             _state.value = ServerState.STOPPED
         }
+    }
+
+    private companion object {
+        const val LOOPBACK_ADDRESS = "127.0.0.1"
     }
 }

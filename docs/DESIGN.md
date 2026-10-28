@@ -87,7 +87,7 @@ State header with text + explanatory sentence. Token field remains masked, suppo
 
 ### API & Gateway Settings
 
-Settings opens a dedicated API page containing an API server switch, a combined base URL card with copy/edit actions, and automatic/custom token modes. Tokens remain masked; copy, custom edit, and automatic refresh are available. Loopback is the visible default; explain LAN exposure before enabling non-loopback bind. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for errors, not routine start/stop.
+Settings opens a dedicated API page containing an API server switch, a fixed loopback URL card with copy and port-edit actions, and automatic/custom token modes. The URL is always `http://127.0.0.1:<port>`; only ports `1024..65535` are editable. Tokens remain masked; copy, custom edit, and automatic refresh are available. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for bind/configuration errors, not routine start/stop.
 
 ### Root & Background Settings
 
@@ -187,7 +187,7 @@ API server, tunnel, target device, and background service each get separate labe
 ### Feedback
 
 - Snackbar for non-destructive success/failure.
-- Dialog for delete and potentially disruptive bind changes.
+- Dialog for delete and port changes.
 - Inline errors for form fields.
 - Snackbar for every save result: success, validation failure, duplicate MAC, or persistence failure.
 - Persistent notification only for active service; never include token or sensitive endpoint data.
@@ -243,7 +243,7 @@ API server, tunnel, target device, and background service each get separate labe
 ## 10. Resolved design decisions
 
 - ARM64-only tunnel target.
-- Loopback-only API default; LAN exposure is opt-in and authenticated.
+- API bind is permanently loopback-only at `127.0.0.1`; only the port is configurable.
 - API token UI defaults to an automatically generated encrypted token, with masked preview/copy, custom token editing, and automatic refresh; revoke and reveal are omitted. Unsaved custom selection is discarded on navigation.
 - Root Mode is hidden under advanced settings and deferred until Standard Mode is stable.
 - Tunnel domain/public hostname setup is deferred until local gateway stability.

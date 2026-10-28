@@ -38,7 +38,7 @@ Room entity/DAO/database, DataStore preferences, secure secret adapter, reposito
 
 ### Gateway
 
-Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP6 menyediakan `/api/v1` health, device CRUD, status, dan wake routes. Settings mengatur bind/port serta start/stop melalui `GatewayServer`; token management tetap berada di secure-store boundary.
+Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP6 menyediakan `/api/v1` health, device CRUD, status, dan wake routes. Settings mengatur port serta start/stop melalui `GatewayServer`; bind selalu `127.0.0.1`; token management tetap berada di secure-store boundary.
 
 ### WoL/network
 
@@ -145,7 +145,7 @@ Ktor memakai graceful shutdown dan `ApplicationStopped` cleanup. Android embedde
 
 ## 6. API security boundary
 
-Auth middleware berjalan sebelum route sensitif. Token dibuat otomatis saat inisialisasi pertama atau disimpan dari custom input, lalu di-copy secara masked melalui halaman API; automatic mode dapat membuat token baru. State API dikelola terpisah oleh `ApiSettingsViewModel`; custom mode yang belum disimpan hanya draft dan dibuang saat navigasi keluar. Perbandingan token constant-time. Error response tidak mengungkap secret. AES-GCM encryption memakai IV yang dibuat Cipher/Keystore; IV disimpan bersama ciphertext untuk dekripsi. Health endpoint hanya mengembalikan status minimal. Bind default loopback; LAN bind merupakan opt-in.
+Auth middleware berjalan sebelum route sensitif. Token dibuat otomatis saat inisialisasi pertama atau disimpan dari custom input, lalu di-copy secara masked melalui halaman API; automatic mode dapat membuat token baru. State API dikelola terpisah oleh `ApiSettingsViewModel`; custom mode yang belum disimpan hanya draft dan dibuang saat navigasi keluar. Perbandingan token constant-time. Error response tidak mengungkap secret. AES-GCM encryption memakai IV yang dibuat Cipher/Keystore; IV disimpan bersama ciphertext untuk dekripsi. Health endpoint hanya mengembalikan status minimal. Bind API selalu `127.0.0.1`; hanya port `1024..65535` yang dapat diubah. Kegagalan bind dipetakan menjadi error recoverable, bukan uncaught coroutine exception.
 
 ## 7. Tunnel architecture decision
 

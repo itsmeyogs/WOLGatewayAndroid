@@ -1,6 +1,6 @@
 # Implementation Plan — WoL Gateway
 
-**Status:** Checkpoint-gated plan
+**Status:** Checkpoint-gated plan; API Settings port/loopback hardening implemented
 **Tanggal:** 2026-10-26
 **Rule:** satu checkpoint aktif; berhenti setelah report; commit hanya setelah pengguna menyatakan `passed`.
 
@@ -95,7 +95,7 @@ Acceptance: byte-level and target tests; packet result separated from target sta
 
 ### CP6 — Ktor API
 
-**Status: PASS (user-approved); manual endpoint verification remains pending.** Implemented versioned routes, DTOs, auth middleware, Keystore-backed token management, validation/error envelope, repository/use-case integration, declared request-size limit, API docs, and dedicated Settings → API controls for server URL/start/stop/token actions. API state is isolated in `ApiSettingsViewModel`/`ApiSettingsUiState`. Token supports automatic generation, automatic refresh, or custom input; masked copy is available. Unsaved custom-mode drafts are discarded without replacing the saved automatic token. Token preview updates immediately after automatic refresh. Reveal and revoke are omitted. Fixed Android Keystore AES-GCM encryption by using the Cipher-generated IV rather than passing a caller-provided IV. Disabled Ktor `watchPaths` for the Android embedded server to prevent `ClosedWatchServiceException` during API server stop/start. API server toggle success is silent; snackbar feedback remains for configuration, token, validation, and server errors.
+**Status: PASS (user-approved); manual endpoint verification remains pending.** Implemented versioned routes, DTOs, auth middleware, Keystore-backed token management, validation/error envelope, repository/use-case integration, declared request-size limit, API docs, and dedicated Settings → API controls for fixed loopback URL/port/start/stop/token actions. API state is isolated in `ApiSettingsViewModel`/`ApiSettingsUiState`. Bind address is permanently `127.0.0.1`; only ports `1024..65535` are accepted. Ktor startup probes the requested loopback port and resolves connectors before reporting success, so permission/bind failures remain recoverable and do not crash the Android process. Token supports automatic generation, automatic refresh, or custom input; masked copy is available. Unsaved custom-mode drafts are discarded without replacing the saved automatic token. Token preview updates immediately after automatic refresh. Reveal and revoke are omitted. Fixed Android Keystore AES-GCM encryption by using the Cipher-generated IV rather than passing a caller-provided IV. Disabled Ktor `watchPaths` for the Android embedded server to prevent `ClosedWatchServiceException` during API server stop/start. API server toggle success is silent; snackbar feedback remains for configuration, token, validation, and server errors.
 Acceptance: automated API integration/auth tests pass; user approved CP6 after source verification. Manual endpoint execution remains pending. No tunnel yet. Evidence: `reports/checkpoints/CP6-rest-api.md` and `docs/API.md`.
 
 ### CP7 — Cloudflare Tunnel Technical Spike

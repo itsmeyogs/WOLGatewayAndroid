@@ -91,7 +91,7 @@ Tunnel token dibuat, diganti, dicabut, dan disimpan dengan Android Keystore-back
 
 ### FR-07 Gateway lifecycle
 
-Pengguna dapat mengatur port, bind address, token, start/stop server, dan melihat status API melalui Settings. Konfigurasi bind/port disimpan di DataStore; default bind adalah `127.0.0.1`, port default `8080`, dan server stopped sampai diaktifkan. LAN bind merupakan opt-in, menampilkan peringatan, dan mewajibkan authentication. Toggle start/stop tidak menampilkan snackbar sukses; snackbar hanya dipakai untuk error atau hasil operasi konfigurasi/token yang relevan. Foreground-service hosting tetap CP9.
+Pengguna dapat mengatur port, token, start/stop server, dan melihat status API melalui Settings. Bind address selalu `127.0.0.1` dan tidak dapat diedit; port default `8080` serta hanya rentang `1024..65535` yang valid. Server stopped sampai diaktifkan. Toggle start/stop tidak menampilkan snackbar sukses; snackbar dipakai untuk port/configuration atau server bind error. Kegagalan bind tidak boleh menghentikan process Android. Foreground-service hosting tetap CP9.
 
 ### FR-08 Background
 
@@ -119,7 +119,7 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - Token dibandingkan dengan mekanisme constant-time.
 - Token tidak masuk log, exception message, notification, URI, report, atau command argument bila runtime memungkinkan alternatif.
 - Tidak ada endpoint shell/arbitrary process execution.
-- Bind address aman sebagai default.
+- Bind address selalu loopback `127.0.0.1`; port privileged di bawah `1024` ditolak.
 - Request validation dan batas ukuran diterapkan di trust boundary.
 - Native binary/vendor dependency dipin dan diverifikasi sebelum dipakai. CP7 runtime provenance, checksum, and license are recorded in `reports/checkpoints/CP7-tunnel.md`; artifact is not accepted as usable until device validation passes.
 - Root tidak diminta tanpa consent.
@@ -149,7 +149,7 @@ Settings mencakup API, port/bind, token management, tunnel, WoL port/broadcast, 
 - **Tunnel rollout:** stabilkan gateway lokal dahulu; uji public hostname/domain setelahnya.
 - **Tunnel reference:** `cloudflared-android` hanya referensi. Bila diperlukan, build binary sendiri dari source Cloudflare/cloudflared yang dipin.
 - **Status checks:** kombinasikan ICMP, TCP, dan service check; hasil harus menyimpan method, waktu, dan alasan.
-- **API bind:** loopback-only default; LAN bind opt-in dengan authentication.
+- **API bind:** permanently loopback-only pada `127.0.0.1`; hanya port `1024..65535` yang configurable.
 - **API token:** random generated default + custom token optional; masked copy and automatic refresh. Revoke tidak diperlukan.
 - **Root Mode:** ditunda sampai Standard Mode stabil; implementasi terakhir.
 
