@@ -202,7 +202,7 @@ class ApiSettingsViewModel @Inject constructor(
                 serverState = gatewayServer.state.value,
             )
             if (showSuccessFeedback) {
-                _events.emit(ApiSettingsMessage(R.string.event_api_configuration_saved))
+                _events.emit(ApiSettingsMessage(R.string.event_api_port_saved))
             }
         } catch (_: Exception) {
             _state.value = _state.value.copy(serverState = ServerState.STOPPED)

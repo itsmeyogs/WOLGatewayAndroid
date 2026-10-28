@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +36,7 @@ import com.yihs.wolgateway.R
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +48,7 @@ fun AppNavHost() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
     var pendingDeleteDeviceId by rememberSaveable { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
@@ -153,6 +156,9 @@ fun AppNavHost() {
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                     as android.content.ClipboardManager
                 clipboard.setPrimaryClip(android.content.ClipData.newPlainText("API setting", text))
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(context.resources.getString(R.string.event_copied_to_clipboard))
+                }
             },
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )

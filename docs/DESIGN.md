@@ -87,7 +87,7 @@ One `Connection` surface contains the connection status and connect switch. A se
 
 ### API & Gateway Settings
 
-Settings opens a dedicated API page containing an API server switch, a fixed loopback URL card with copy and port-edit actions, and automatic/custom token modes. The URL is always `http://127.0.0.1:<port>`; only ports `1024..65535` are editable. Tokens remain masked; copy, custom edit, and automatic refresh are available. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for bind/configuration errors, not routine start/stop.
+Settings opens a dedicated API page containing an API server switch, a fixed loopback URL card with copy and port-edit actions, and automatic/custom token modes. The URL is always `http://127.0.0.1:<port>`; only ports `1024..65535` are editable. Tokens remain masked; copy, custom edit, and automatic refresh are available. Show a copy-confirmation snackbar for URL and token copy actions. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for port-save results and bind/configuration errors, not routine start/stop.
 
 ### Root & Background Settings
 
