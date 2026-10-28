@@ -80,12 +80,19 @@ class ApiSettingsViewModel @Inject constructor(
             viewModelScope.launch { _events.emit(ApiSettingsMessage(R.string.event_api_configuration_invalid)) }
             return false
         }
-        viewModelScope.launch { applyConfiguration(startAfterSave = current.serverState == ServerState.RUNNING) }
+        viewModelScope.launch {
+            applyConfiguration(
+                startAfterSave = current.serverState == ServerState.RUNNING,
+                showSuccessFeedback = true,
+            )
+        }
         return true
     }
 
     fun startServer() {
-        viewModelScope.launch { applyConfiguration(startAfterSave = true) }
+        viewModelScope.launch {
+            applyConfiguration(startAfterSave = true, showSuccessFeedback = false)
+        }
     }
 
     fun stopServer() {
@@ -93,7 +100,6 @@ class ApiSettingsViewModel @Inject constructor(
             gatewayServer.stop()
             savePreferences(serverEnabled = false)
             _state.value = _state.value.copy(serverState = gatewayServer.state.value)
-            _events.emit(ApiSettingsMessage(R.string.event_api_server_stopped))
         }
     }
 
@@ -176,7 +182,10 @@ class ApiSettingsViewModel @Inject constructor(
         )
     }
 
-    private suspend fun applyConfiguration(startAfterSave: Boolean) {
+    private suspend fun applyConfiguration(
+        startAfterSave: Boolean,
+        showSuccessFeedback: Boolean,
+    ) {
         val current = _state.value
         val port = current.port.toIntOrNull()
         val bind = current.bindAddress.trim()
@@ -197,7 +206,9 @@ class ApiSettingsViewModel @Inject constructor(
                 port = port.toString(),
                 serverState = gatewayServer.state.value,
             )
-            _events.emit(ApiSettingsMessage(if (startAfterSave) R.string.event_api_server_started else R.string.event_api_configuration_saved))
+            if (showSuccessFeedback) {
+                _events.emit(ApiSettingsMessage(R.string.event_api_configuration_saved))
+            }
         } catch (_: Exception) {
             _state.value = _state.value.copy(serverState = ServerState.STOPPED)
             savePreferences(serverEnabled = false, bindAddress = bind, port = port ?: ApiSettingsUiState.DEFAULT_PORT)

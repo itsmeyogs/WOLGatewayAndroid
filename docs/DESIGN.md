@@ -87,7 +87,7 @@ State header with text + explanatory sentence. Token field remains masked, suppo
 
 ### API & Gateway Settings
 
-Settings opens a dedicated API page containing an API server switch, a combined base URL card with copy/edit actions, and automatic/custom token modes. Tokens remain masked; copy, custom edit, and automatic refresh are available. Loopback is the visible default; explain LAN exposure before enabling non-loopback bind. Show API server status separately from tunnel status.
+Settings opens a dedicated API page containing an API server switch, a combined base URL card with copy/edit actions, and automatic/custom token modes. Tokens remain masked; copy, custom edit, and automatic refresh are available. Loopback is the visible default; explain LAN exposure before enabling non-loopback bind. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for errors, not routine start/stop.
 
 ### Root & Background Settings
 

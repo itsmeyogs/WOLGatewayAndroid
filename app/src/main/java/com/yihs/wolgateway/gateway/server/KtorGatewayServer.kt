@@ -44,7 +44,12 @@ class KtorGatewayServer @Inject constructor(
     override fun start() {
         synchronized(lock) {
             if (_state.value == ServerState.RUNNING) return
-            engine = embeddedServer(CIO, host = config.bindAddress, port = config.port) {
+            engine = embeddedServer(
+                CIO,
+                host = config.bindAddress,
+                port = config.port,
+                watchPaths = emptyList(),
+            ) {
                 install(ContentNegotiation) {
                     json(Json { encodeDefaults = true; ignoreUnknownKeys = false })
                 }

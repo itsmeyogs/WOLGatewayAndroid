@@ -141,7 +141,7 @@ CP1 memilih Hilt sebagai dependency injection framework. `MainActivity` memakai 
 
 Satu `GatewayCoordinator` mengatur server, tunnel, dan service state. Start harus idempotent; stop harus cancellable dan menunggu cleanup bounded. Process exit/tunnel health tidak boleh disimpulkan dari boolean historis saja.
 
-Ktor memakai graceful shutdown dan `ApplicationStopped` cleanup. Foreground service hanya menjadi host lifecycle; ViewModel tidak memiliki service singleton global.
+Ktor memakai graceful shutdown dan `ApplicationStopped` cleanup. Android embedded server menonaktifkan `watchPaths` karena auto-reload tidak diperlukan di APK dan dapat meninggalkan `WatchService` finalizer noise saat stop/start. Foreground service hanya menjadi host lifecycle; ViewModel tidak memiliki service singleton global.
 
 ## 6. API security boundary
 

@@ -91,7 +91,7 @@ Tunnel token dibuat, diganti, dicabut, dan disimpan dengan Android Keystore-back
 
 ### FR-07 Gateway lifecycle
 
-Pengguna dapat mengatur port, bind address, token, start/stop server, dan melihat status API melalui Settings. Konfigurasi bind/port disimpan di DataStore; default bind adalah `127.0.0.1`, port default `8080`, dan server stopped sampai diaktifkan. LAN bind merupakan opt-in, menampilkan peringatan, dan mewajibkan authentication. Foreground-service hosting tetap CP9.
+Pengguna dapat mengatur port, bind address, token, start/stop server, dan melihat status API melalui Settings. Konfigurasi bind/port disimpan di DataStore; default bind adalah `127.0.0.1`, port default `8080`, dan server stopped sampai diaktifkan. LAN bind merupakan opt-in, menampilkan peringatan, dan mewajibkan authentication. Toggle start/stop tidak menampilkan snackbar sukses; snackbar hanya dipakai untuk error atau hasil operasi konfigurasi/token yang relevan. Foreground-service hosting tetap CP9.
 
 ### FR-08 Background
 

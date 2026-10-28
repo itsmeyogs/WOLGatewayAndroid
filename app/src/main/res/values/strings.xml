@@ -69,8 +69,6 @@
     <string name="action_replace_tunnel_token">Replace tunnel token</string>
     <string name="dialog_edit_api_url_title">Edit API URL</string>
     <string name="validation_port_invalid">Port must be between 1 and 65535</string>
-    <string name="event_api_server_started">API server started</string>
-    <string name="event_api_server_stopped">API server stopped</string>
     <string name="event_api_server_failed">API server could not start</string>
     <string name="event_api_configuration_saved">API settings saved</string>
     <string name="event_api_configuration_invalid">Fix the API address and port</string>
