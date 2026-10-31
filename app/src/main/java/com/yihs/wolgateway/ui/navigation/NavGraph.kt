@@ -43,6 +43,7 @@ fun NavGraph(
                 onOpenDevice = { navController.navigate(Screen.Details.createRoute(it)) },
                 onWake = onWake,
                 viewModel = devicesViewModel,
+                settingsViewModel = settingsViewModel,
             )
         }
         composable(Screen.AddDevices.route) {

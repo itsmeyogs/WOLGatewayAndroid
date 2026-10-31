@@ -91,7 +91,7 @@ Settings opens a dedicated API page containing an API server switch, a fixed loo
 
 ### Root & Background Settings
 
-Standard Mode selected by default. Root capability and permission status are informational until user opts in. Service controls, notification state, battery optimization guidance, boot recovery limitation, and OEM troubleshooting.
+Standard Mode selected by default. Root capability and permission status are informational until user opts in. Service controls, notification state, battery optimization guidance, boot recovery limitation, and OEM troubleshooting. When battery optimization remains enabled, show a startup dialog on Devices with a link to system settings; refresh status on resume.
 
 ### Diagnostics
 

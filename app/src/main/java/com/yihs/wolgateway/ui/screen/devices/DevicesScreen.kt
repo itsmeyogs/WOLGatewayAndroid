@@ -14,9 +14,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.yihs.wolgateway.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,12 +43,27 @@ fun DevicesScreen(
     onWake: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
+    settingsViewModel: com.yihs.wolgateway.ui.screen.settings.SettingsViewModel,
 ) {
     val devices by viewModel.devices.collectAsStateWithLifecycle()
     val query by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val gatewayState by viewModel.gatewayState.collectAsStateWithLifecycle()
     val tunnelState by viewModel.tunnelState.collectAsStateWithLifecycle()
+    val settingsState by settingsViewModel.state.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var showBatteryDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(settingsState.batteryOptimizationIgnored) {
+        if (!settingsState.batteryOptimizationIgnored) showBatteryDialog = true
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) settingsViewModel.refreshBatteryOptimizationStatus()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val filteredDevices = remember(devices, query) {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) devices else devices.filter {
@@ -104,5 +129,23 @@ fun DevicesScreen(
                     }
                 }
             }
+    }
+    if (showBatteryDialog && !settingsState.batteryOptimizationIgnored) {
+        AlertDialog(
+            onDismissRequest = { showBatteryDialog = false },
+            title = { Text(stringResource(R.string.dialog_battery_title)) },
+            text = { Text(stringResource(R.string.dialog_battery_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBatteryDialog = false
+                    settingsViewModel.requestBatteryOptimizationExemption()
+                }) { Text(stringResource(R.string.action_review_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatteryDialog = false }) {
+                    Text(stringResource(R.string.action_later))
+                }
+            },
+        )
     }
 }

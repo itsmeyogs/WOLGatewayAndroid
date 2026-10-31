@@ -95,7 +95,7 @@ Pengguna dapat mengatur port, token, start/stop server, dan melihat status API m
 
 ### FR-08 Background
 
-Foreground service dengan notification persisten digunakan untuk operasi koneksi persisten. CP9 memakai `GatewayService`, `GatewayCoordinator`, dan `BOOT_COMPLETED` receiver untuk Standard Mode. Notification membedakan API-only dan API+tunnel. Menyalakan tunnel memastikan API service aktif; mematikan API memutus tunnel. `POST_NOTIFICATIONS` hanya diminta pada Android 13/API 33+. Boot recovery dan network recovery bersifat best-effort serta mengikuti pembatasan OS/OEM dan Android foreground-service restrictions. Root autostart ditunda ke CP10.
+Foreground service dengan notification persisten digunakan untuk operasi koneksi persisten. CP9 memakai `GatewayService`, `GatewayCoordinator`, dan `BOOT_COMPLETED` receiver untuk Standard Mode. Notification membedakan API-only dan API+tunnel. Menyalakan tunnel memastikan API service aktif; mematikan API memutus tunnel. `POST_NOTIFICATIONS` hanya diminta pada Android 13/API 33+. Settings menampilkan status battery optimization dan guidance OEM; Devices menampilkan dialog startup saat optimization masih aktif; status diperbarui saat app kembali foreground. Boot recovery dan network recovery bersifat best-effort serta mengikuti pembatasan OS/OEM dan Android foreground-service restrictions. Root autostart ditunda ke CP10.
 
 ### FR-09 Root Mode
 

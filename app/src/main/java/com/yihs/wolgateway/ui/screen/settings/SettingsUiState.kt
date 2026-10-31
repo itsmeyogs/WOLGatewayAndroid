@@ -6,4 +6,6 @@ data class SettingsUiState(
     val tunnelTokenConfigured: Boolean = false,
     val tunnelErrorMessage: String? = null,
     val tunnelError: Int? = null,
+    val batteryOptimizationIgnored: Boolean = false,
+    val batteryGuidance: Int? = null,
 )

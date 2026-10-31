@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** CP6 REST API, CP7 Cloudflare runtime, and CP9 Standard Mode background service implemented and user-approved; CP7 device validation passed; CP9 device validation pending; root layer remains planned
+**Status:** CP6 REST API, CP7 Cloudflare runtime, and CP9 Standard Mode background service implemented and user-approved; CP7 device validation and CP9 battery optimization validation passed; remaining CP9 device validation pending; root layer remains planned
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -52,7 +52,7 @@ Magic packet builder, UDP sender, discovery adapter, status checker, network int
 
 Foreground service, notification, boot/network callbacks, lifecycle coordinator, start/stop command handling. Service memanggil controller; tidak memiliki business rule duplikat.
 
-CP9 menambahkan `GatewayService`, dengan `GatewayCoordinator` sebagai pemilik lifecycle API dan tunnel yang dijalankan saat boot. `BootReceiver` membaca preference non-secret dan memulai service secara best-effort setelah `BOOT_COMPLETED`; network availability meminta tunnel recovery. Tunnel autostart selalu membutuhkan token tersimpan dan API service aktif. Android/OEM battery policy, notification permission, dan background-start restrictions tetap dapat membatasi hasil.
+CP9 menambahkan `GatewayService`, dengan `GatewayCoordinator` sebagai pemilik lifecycle API dan tunnel yang dijalankan saat boot. `BootReceiver` membaca preference non-secret dan memulai service secara best-effort setelah `BOOT_COMPLETED`; network availability meminta tunnel recovery. Tunnel autostart selalu membutuhkan token tersimpan dan API service aktif. Battery optimization status/guidance tersedia di Settings dan dialog awal ditampilkan pada Devices saat optimization masih aktif. Android/OEM battery policy, notification permission, dan background-start restrictions tetap dapat membatasi hasil.
 Manual API or tunnel start also enters the foreground-service lifecycle. API stop disconnects tunnel and clears both autostart preferences; tunnel stop leaves the local API running.
 
 ### Root

@@ -15,11 +15,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
 
@@ -31,6 +35,14 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshBatteryOptimizationStatus()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -88,6 +100,20 @@ fun SettingsScreen(
                 }
                 HorizontalDivider()
                 SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))
+                HorizontalDivider()
+                Column(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = viewModel::requestBatteryOptimizationExemption).padding(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(stringResource(R.string.settings_battery), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(if (state.batteryOptimizationIgnored) R.string.settings_battery_exempt else R.string.settings_battery_required),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    if (!state.batteryOptimizationIgnored) {
+                        state.batteryGuidance?.let { Text(stringResource(it), style = MaterialTheme.typography.bodySmall) }
+                    }
+                }
                 HorizontalDivider()
                 SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
             }
