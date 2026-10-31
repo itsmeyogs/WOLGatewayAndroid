@@ -71,7 +71,7 @@ fun TunnelScreen(
                     ) {
                         Text(stringResource(R.string.tunnel_connection), style = MaterialTheme.typography.titleMedium)
                         Switch(
-                            checked = connectionChecked || state.autoStartTunnel,
+                            checked = connectionChecked,
                             onCheckedChange = { enabled -> if (enabled) viewModel.connect() else viewModel.disconnect() },
                             enabled = connectionEnabled,
                         )

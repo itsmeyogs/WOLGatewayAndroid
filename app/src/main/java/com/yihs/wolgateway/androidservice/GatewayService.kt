@@ -35,6 +35,10 @@ class GatewayService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var connectivityManager: ConnectivityManager
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onLost(network: Network) {
+            serviceScope.launch { coordinator.onNetworkLost() }
+        }
+
         override fun onAvailable(network: Network) {
             serviceScope.launch { coordinator.reconnectTunnelIfEnabled() }
         }

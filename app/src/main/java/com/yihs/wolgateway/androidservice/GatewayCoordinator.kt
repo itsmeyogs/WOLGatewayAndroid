@@ -34,7 +34,6 @@ class GatewayCoordinator @Inject constructor(
             gatewayServer.start()
         }
         if (startTunnel && tunnelController.state.value.tokenConfigured) {
-            tunnelController.setAutoReconnect(true)
             tunnelController.connect(localApiOrigin(port))
         }
         true
@@ -42,14 +41,18 @@ class GatewayCoordinator @Inject constructor(
 
     suspend fun reconnectTunnelIfEnabled() = lifecycleMutex.withLock {
         val values = preferences.data.first()
+        if (values[AUTO_RECONNECT] != true) return@withLock
         if (values[GatewayStartupPreferences.AUTO_START_TUNNEL] != true ||
             gatewayServer.state.value != ServerState.RUNNING ||
             !tunnelController.state.value.tokenConfigured
         ) return@withLock
 
         val port = values[API_PORT] ?: DEFAULT_API_PORT
-        tunnelController.setAutoReconnect(true)
         tunnelController.reconnect(localApiOrigin(port))
+    }
+
+    fun onNetworkLost() {
+        tunnelController.onNetworkLost()
     }
 
     fun stop() {
@@ -60,6 +63,7 @@ class GatewayCoordinator @Inject constructor(
     private companion object {
         val API_PORT = intPreferencesKey("api_port")
         val SERVER_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("api_server_enabled")
+        val AUTO_RECONNECT = androidx.datastore.preferences.core.booleanPreferencesKey("tunnel_auto_reconnect")
         const val DEFAULT_API_PORT = 8080
 
         fun localApiOrigin(port: Int): String = "127.0.0.1:$port"

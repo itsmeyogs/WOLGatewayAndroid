@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -62,10 +64,19 @@ class TunnelController @Inject constructor(
                     _state.value = _state.value.copy(status = TunnelState.CONNECTING, error = null, userMessage = null)
                 try {
                     if (!runtime.isRunning()) {
-                        runtime.start(TunnelRuntimeConfig(token, originAddress))
+                        withTimeout(START_TIMEOUT_MS) {
+                            runtime.start(TunnelRuntimeConfig(token, originAddress))
+                        }
                     }
-                    _state.value = _state.value.copy(status = TunnelState.CONNECTED)
-                    startMonitorIfNeeded()
+                    _state.value = _state.value.copy(status = TunnelState.CONNECTED, error = null, userMessage = null)
+                    startMonitor()
+                } catch (timeout: TimeoutCancellationException) {
+                    runCatching { runtime.stop() }
+                    _state.value = _state.value.copy(
+                        status = TunnelState.ERROR,
+                        error = TunnelControllerError.START_FAILED,
+                        userMessage = "Tunnel connection timed out. Check your internet connection.",
+                    )
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -97,9 +108,18 @@ class TunnelController @Inject constructor(
                     return@withLock
                 }
                 try {
-                    runtime.start(TunnelRuntimeConfig(token, originAddress))
-                    _state.value = _state.value.copy(status = TunnelState.CONNECTED)
-                    startMonitorIfNeeded()
+                    withTimeout(START_TIMEOUT_MS) {
+                        runtime.start(TunnelRuntimeConfig(token, originAddress))
+                    }
+                    _state.value = _state.value.copy(status = TunnelState.CONNECTED, error = null, userMessage = null)
+                    startMonitor()
+                } catch (timeout: TimeoutCancellationException) {
+                    runCatching { runtime.stop() }
+                    _state.value = _state.value.copy(
+                        status = TunnelState.ERROR,
+                        error = TunnelControllerError.START_FAILED,
+                        userMessage = "Tunnel connection timed out. Check your internet connection.",
+                    )
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -125,25 +145,53 @@ class TunnelController @Inject constructor(
         }
     }
 
+    fun onNetworkLost() {
+        scope.launch {
+            lifecycleMutex.withLock {
+                runCatching { runtime.stop() }
+                _state.value = _state.value.copy(
+                    status = if (autoReconnect) TunnelState.RECONNECTING else TunnelState.DISCONNECTED,
+                    error = null,
+                    userMessage = null,
+                )
+                if (autoReconnect) startMonitor()
+            }
+        }
+    }
+
     fun setAutoReconnect(enabled: Boolean) {
         autoReconnect = enabled
         if (!enabled) {
             monitorJob?.cancel()
             monitorJob = null
-        } else if (_state.value.status == TunnelState.CONNECTED) {
-            startMonitorIfNeeded()
+            if (_state.value.status == TunnelState.RECONNECTING) {
+                scope.launch {
+                    lifecycleMutex.withLock {
+                        runCatching { runtime.stop() }
+                        _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null, userMessage = null)
+                    }
+                }
+            }
+        } else if (_state.value.status == TunnelState.CONNECTED || _state.value.status == TunnelState.RECONNECTING) {
+            startMonitor()
         }
     }
 
-    private fun startMonitorIfNeeded() {
-        if (!autoReconnect || monitorJob?.isActive == true) return
+    private fun startMonitor() {
+        if (monitorJob?.isActive == true) return
         monitorJob = scope.launch {
             while (isActive) {
                 delay(MONITOR_INTERVAL_MS)
-                if (!autoReconnect || runtime.isRunning()) continue
+                if (runtime.isRunning()) continue
                 lifecycleMutex.withLock {
-                    if (!autoReconnect || runtime.isRunning()) return@withLock
+                    if (runtime.isRunning()) return@withLock
                     val origin = originAddress ?: return@withLock
+                    if (!autoReconnect) {
+                        _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null, userMessage = null)
+                        monitorJob?.cancel()
+                        monitorJob = null
+                        return@withLock
+                    }
                     val token = tokenStore.read()
                     if (token == null) {
                         _state.value = _state.value.copy(
@@ -156,8 +204,14 @@ class TunnelController @Inject constructor(
                     }
                     _state.value = _state.value.copy(status = TunnelState.RECONNECTING, error = null)
                     try {
-                        runtime.start(TunnelRuntimeConfig(token, origin))
-                        _state.value = _state.value.copy(status = TunnelState.CONNECTED)
+                        withTimeout(START_TIMEOUT_MS) {
+                            runtime.start(TunnelRuntimeConfig(token, origin))
+                        }
+                        _state.value = _state.value.copy(
+                            status = TunnelState.CONNECTED,
+                            error = null,
+                            userMessage = null,
+                        )
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
@@ -187,6 +241,7 @@ class TunnelController @Inject constructor(
     private companion object {
         const val TOKEN_PREVIEW_LENGTH = 6
         const val MONITOR_INTERVAL_MS = 1_000L
+        const val START_TIMEOUT_MS = 15_000L
     }
 }
 

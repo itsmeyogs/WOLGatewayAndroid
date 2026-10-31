@@ -194,7 +194,7 @@ class CloudflareTunnelRuntime @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_SECONDS = 3L
-        const val STARTUP_CHECKS = 200
+        const val STARTUP_CHECKS = 120
         const val STARTUP_CHECK_INTERVAL_MS = 100L
         const val OUTPUT_DRAIN_TIMEOUT_MS = 2_000L
         const val LOG_CHUNK_LENGTH = 3_500
