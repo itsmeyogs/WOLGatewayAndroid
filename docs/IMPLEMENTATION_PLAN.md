@@ -39,7 +39,7 @@ Do not add a new library when JDK/Kotlin/Android platform APIs or an installed d
 | CP6 | REST API | auth/API contract | Ktor integration |
 | CP7 | Tunnel technical spike | feasibility proven | ARM64/end-to-end |
 | CP8 | Tunnel management | state/retry/secret handling | state + process tests |
-| CP9 | Background service | lifecycle on target devices | Android device matrix |
+| CP9 | Background service | lifecycle on target devices | Android device matrix — PASS |
 | CP10 | Root Mode | optional isolated fallback | rooted/non-root tests |
 | CP11 | Integration/regression | final criteria or blockers approved | E2E/security/regression |
 | CP12 | Diagnostics | copy-safe mode-aware troubleshooting page | redaction/unit/device checks |
@@ -112,10 +112,10 @@ Acceptance: `PASS`; CP7 implementation and Android ARM64 end-to-end validation a
 Implement adapter/controller, state machine, secure token storage, health monitoring, retry/backoff/jitter, token replacement, duplicate prevention, cleanup, and the tunnel management UI based on CP7 result. The tunnel screen uses separated Connection, conditional Auto reconnect, and Tunnel token sections with dividers. Fresh install shows the token form directly; no editable origin, manual reconnect action, or token copy exists. Tunnel origin follows the API Settings port at `127.0.0.1:<port>`. Connect remains disabled until a token is saved; token editing is locked during an active connection attempt or connection; connection errors occupy the Connection message slot. Devices dashboard consumes the shared controller Flow through `DevicesViewModel` and renders the live tunnel state in `GatewayStatusStrip`.
 Acceptance: connect/disconnect/reconnect verified, including process crash and network loss.
 
-### CP9 — Background service — user-approved; battery optimization validation passed
+### CP9 — Background service — PASS (user-approved)
 
 Implemented Standard Mode foreground service, persistent notification, shared API/tunnel coordinator, default-network recovery callback, and best-effort `BOOT_COMPLETED` startup. Settings persist API-service and tunnel autostart switches. Tunnel autostart requires a saved token and starts the API service because the tunnel origin is loopback. Root mode is deliberately excluded; root startup remains CP10.
-Acceptance: user-approved after implementation review. Battery optimization guidance and status flow are user-validated PASS. Automated build/test and remaining target Android/OEM boot, notification permission, process death, API-only, and API+tunnel validation remain pending. Evidence: `reports/checkpoints/CP9-background-service.md` and `reports/checkpoints/CP9-battery-guidance.md`.
+Acceptance: user-approved. Boot recovery, API-only/API+tunnel autostart, network recovery, process-death behavior, battery optimization guidance, Android 13 notification behavior, and OEM/device validation are PASS. Build/test commands were unavailable because Java Runtime was unavailable; user-approved as PASS. Evidence: `reports/checkpoints/CP9-background-service.md` and `reports/checkpoints/CP9-battery-guidance.md`.
 
 ### CP10 — Root Mode
 

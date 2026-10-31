@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** CP6 REST API, CP7 Cloudflare runtime, and CP9 Standard Mode background service implemented and user-approved; CP7 device validation and CP9 battery optimization validation passed; remaining CP9 device validation pending; root layer remains planned
+**Status:** CP6 REST API, CP7 Cloudflare runtime, and CP9 Standard Mode background service implemented and user-approved; CP7 and CP9 device validation passed; root layer remains planned
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
