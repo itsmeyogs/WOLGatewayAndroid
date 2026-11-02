@@ -106,16 +106,20 @@ class GatewayService : Service() {
             if (tunnelActive) R.string.gateway_service_notification_api_tunnel
             else R.string.gateway_service_notification_api,
         )
-        getSystemService(NotificationManager::class.java).notify(
-            NOTIFICATION_ID,
-            NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText(text)
-                .setOngoing(true)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                .build(),
-        )
+        // Android 13 may suppress this notification when permission/channel access is
+        // disabled. That visibility state must not affect the service coordinator.
+        runCatching {
+            getSystemService(NotificationManager::class.java).notify(
+                NOTIFICATION_ID,
+                NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentText(text)
+                    .setOngoing(true)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .build(),
+            )
+        }
     }
 
     private fun createNotificationChannel() {

@@ -52,8 +52,9 @@ Magic packet builder, UDP sender, discovery adapter, status checker, network int
 
 Foreground service, notification, boot/network callbacks, lifecycle coordinator, start/stop command handling. Service memanggil controller; tidak memiliki business rule duplikat.
 
-CP9 menambahkan `GatewayService`, dengan `GatewayCoordinator` sebagai pemilik lifecycle API dan tunnel yang dijalankan saat boot. `BootReceiver` membaca preference non-secret dan memulai service secara best-effort setelah `BOOT_COMPLETED`; network availability meminta tunnel recovery. Tunnel autostart selalu membutuhkan token tersimpan dan API service aktif. Battery optimization status/guidance tersedia di Settings dan dialog awal ditampilkan pada Devices saat optimization masih aktif. Android/OEM battery policy, notification permission, dan background-start restrictions tetap dapat membatasi hasil.
+CP9 menambahkan `GatewayService`, dengan `GatewayCoordinator` sebagai pemilik lifecycle API dan tunnel yang dijalankan saat boot. `BootReceiver` membaca preference non-secret dan memulai service secara best-effort setelah `BOOT_COMPLETED`; network availability meminta tunnel recovery. Tunnel autostart selalu membutuhkan token tersimpan dan API service aktif. Battery optimization status/guidance tersedia di Settings dan dialog awal ditampilkan pada Devices saat optimization masih aktif. Status visibilitas notification terpisah dari lifecycle service: penolakan `POST_NOTIFICATIONS` atau channel yang diblokir tidak boleh menghentikan API maupun tunnel. Android/OEM battery policy dan background-start restrictions tetap dapat membatasi hasil.
 Manual API or tunnel start also enters the foreground-service lifecycle. API stop disconnects tunnel and clears both autostart preferences; tunnel stop leaves the local API running.
+Sebagian OEM/ROM Android 13 dapat membunuh process saat permission berubah melalui policy vendor. Ini dicatat sebagai keterbatasan device-specific; Standard Mode tervalidasi normal pada Android 10 dan Android 13 device kedua. Lifecycle aplikasi tidak mengklaim dapat mencegah vendor process kill.
 
 ### Root
 

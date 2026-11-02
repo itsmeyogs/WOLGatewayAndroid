@@ -114,7 +114,8 @@ Acceptance: connect/disconnect/reconnect verified, including process crash and n
 
 ### CP9 — Background service — PASS (user-approved)
 
-Implemented Standard Mode foreground service, persistent notification, shared API/tunnel coordinator, default-network recovery callback, and best-effort `BOOT_COMPLETED` startup. Settings persist API-service and tunnel autostart switches. Tunnel autostart requires a saved token and starts the API service because the tunnel origin is loopback. Root mode is deliberately excluded; root startup remains CP10.
+Implemented Standard Mode foreground service, persistent notification, shared API/tunnel coordinator, default-network recovery callback, and best-effort `BOOT_COMPLETED` startup. Settings persist API-service and tunnel autostart switches. Tunnel autostart requires a saved token and starts the API service because the tunnel origin is loopback. Notification permission/channel visibility is independent from service, API, and tunnel lifecycle; Android 13 denial must not stop the Standard Mode service. Root mode is deliberately excluded; root startup remains CP10.
+Standard Mode validation passes on Android 10 and Android 13 device two. Android 13 device one has an OEM-specific `PermissionHelper` process-kill behavior when notification permission changes; this remains documented as a device limitation, without a vendor-specific workaround.
 Acceptance: user-approved. Boot recovery, API-only/API+tunnel autostart, network recovery, process-death behavior, battery optimization guidance, Android 13 notification behavior, and OEM/device validation are PASS. Build/test commands were unavailable because Java Runtime was unavailable; user-approved as PASS. Evidence: `reports/checkpoints/CP9-background-service.md` and `reports/checkpoints/CP9-battery-guidance.md`.
 
 ### CP10 — Root Mode

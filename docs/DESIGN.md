@@ -204,7 +204,8 @@ API server, tunnel, target device, and background service each get separate labe
 - Dialog for delete and port changes.
 - Inline errors for form fields.
 - Snackbar for every save result: success, validation failure, duplicate MAC, or persistence failure.
-- Persistent notification only for active service; never include token or sensitive endpoint data.
+- Persistent notification only for active service; never include token or sensitive endpoint data. Notification permission/channel visibility must not control service, API, or tunnel lifecycle.
+- OEM process-kill behavior after permission changes is device-specific. Standard Mode validation passes on Android 10 and Android 13 device two; no vendor-specific workaround is required.
 
 ## 7. Responsive/accessibility rules
 
