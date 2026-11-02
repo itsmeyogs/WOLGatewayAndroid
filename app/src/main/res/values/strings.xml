@@ -35,6 +35,7 @@
     <string name="gateway_api_stopped">Stopped</string>
     <string name="gateway_tunnel_off">Off</string>
     <string name="gateway_service_standard">Standard</string>
+    <string name="gateway_service_root">Root</string>
     <string name="settings_api_server">API server</string>
     <string name="settings_api">API</string>
     <string name="settings_api_description">Configure the local server and its authentication token</string>
@@ -90,8 +91,16 @@
     <string name="validation_tunnel_token_invalid">Tunnel token must contain 32–8192 printable characters</string>
     <string name="settings_background">Background</string>
     <string name="settings_background_value">Standard Mode</string>
+    <string name="settings_standard_mode">Standard Mode</string>
+    <string name="settings_standard_mode_description">Runs the gateway with regular Android service permissions.</string>
+    <string name="settings_root_mode_description">Runs the gateway service with root capabilities when detected.</string>
     <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_diagnostics_value">Available after gateway services are configured</string>
+    <string name="settings_root_mode">Root Mode</string>
+    <string name="settings_root_available">Capability detected; explicit consent required</string>
+    <string name="settings_root_unavailable">Unavailable; Standard Mode remains active</string>
+    <string name="settings_root_unknown">Capability could not be determined</string>
+    <string name="settings_root_enable">Enable Root Mode</string>
     <string name="settings_auto_start_api">Auto-start API service</string>
     <string name="settings_auto_start_tunnel">Auto-start tunnel</string>
     <string name="settings_auto_start_tunnel_token_required">Set a tunnel token first on the Tunnel page.</string>

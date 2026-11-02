@@ -87,6 +87,9 @@ fun DevicesScreen(
             GatewayStatusStrip(
                 serverState = gatewayState,
                 tunnelState = tunnelState.status,
+                rootMode = settingsState.rootModeEnabled &&
+                    settingsState.rootConsentGiven &&
+                    settingsState.rootCapability == com.yihs.wolgateway.root.RootCapability.AVAILABLE,
                 modifier = Modifier.padding(top = 12.dp),
             )
             DeviceSearchBar(query, viewModel::setSearchQuery)

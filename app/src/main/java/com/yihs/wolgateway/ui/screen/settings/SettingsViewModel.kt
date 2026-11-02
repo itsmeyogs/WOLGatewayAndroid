@@ -21,12 +21,15 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.yihs.wolgateway.root.RootCapabilityDetector
+import com.yihs.wolgateway.root.RootCapability
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val preferences: DataStore<Preferences>,
     tunnelController: TunnelController,
+    private val rootDetector: RootCapabilityDetector,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(SettingsUiState())
     val state = _state.asStateFlow()
@@ -46,8 +49,22 @@ class SettingsViewModel @Inject constructor(
                     },
                     batteryOptimizationIgnored = batteryOptimizationIgnored(),
                     batteryGuidance = batteryGuidance(),
+                    rootCapability = rootDetector.detect(),
+                    rootModeEnabled = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true,
+                    rootConsentGiven = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true,
                 )
-            }.collect { _state.value = it }
+            }.collect { nextState ->
+                if (nextState.rootModeEnabled && nextState.rootCapability != RootCapability.AVAILABLE) {
+                    preferences.edit {
+                        it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = false
+                        it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = false
+                    }
+                }
+                _state.value = nextState.copy(
+                    rootModeEnabled = nextState.rootModeEnabled && nextState.rootCapability == RootCapability.AVAILABLE,
+                    rootConsentGiven = nextState.rootConsentGiven && nextState.rootCapability == RootCapability.AVAILABLE,
+                )
+            }
         }
     }
 
@@ -93,6 +110,17 @@ class SettingsViewModel @Inject constructor(
                 if (enabled) it[GatewayStartupPreferences.AUTO_START_API] = true
             }
             if (enabled) GatewayService.start(context)
+        }
+    }
+
+    fun setRootMode(enabled: Boolean) {
+        viewModelScope.launch {
+            val capability = rootDetector.detect()
+            if (enabled && capability != com.yihs.wolgateway.root.RootCapability.AVAILABLE) return@launch
+            preferences.edit {
+                it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = enabled
+                it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = enabled
+            }
         }
     }
 }

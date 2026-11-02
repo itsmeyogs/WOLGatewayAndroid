@@ -20,6 +20,7 @@ import com.yihs.wolgateway.tunnel.model.TunnelState
 fun GatewayStatusStrip(
     serverState: ServerState,
     tunnelState: TunnelState,
+    rootMode: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -41,7 +42,10 @@ fun GatewayStatusStrip(
                     stringResource(R.string.gateway_tunnel),
                     stringResource(tunnelStatusResource(tunnelState)),
                 )
-                GatewayStatus(stringResource(R.string.gateway_service), stringResource(R.string.gateway_service_standard))
+                GatewayStatus(
+                    stringResource(R.string.gateway_service),
+                    stringResource(if (rootMode) R.string.gateway_service_root else R.string.gateway_service_standard),
+                )
             }
         }
     }

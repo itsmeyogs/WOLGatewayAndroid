@@ -27,6 +27,8 @@ import com.yihs.wolgateway.network.status.AndroidStatusChecker
 import com.yihs.wolgateway.network.wol.UdpWolSender
 import com.yihs.wolgateway.domain.service.StatusChecker
 import com.yihs.wolgateway.domain.service.WolSender
+import com.yihs.wolgateway.root.AndroidRootCapabilityDetector
+import com.yihs.wolgateway.root.RootCapabilityDetector
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +39,9 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    @Provides
+    @Singleton
+    fun provideRootCapabilityDetector(): RootCapabilityDetector = AndroidRootCapabilityDetector()
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): GatewayDatabase =

@@ -1,6 +1,8 @@
 package com.yihs.wolgateway.ui.screen.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,11 +14,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Modifier
@@ -26,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
+import com.yihs.wolgateway.root.RootCapability
 
 @Composable
 fun SettingsScreen(
@@ -35,6 +42,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var showServiceModeDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -99,7 +107,15 @@ fun SettingsScreen(
                     }
                 }
                 HorizontalDivider()
-                SettingRow(stringResource(R.string.settings_background), stringResource(R.string.settings_background_value))
+                SettingsLinkRow(
+                    title = stringResource(R.string.settings_background),
+                    description = stringResource(
+                        if (state.rootModeEnabled && state.rootConsentGiven && state.rootCapability == RootCapability.AVAILABLE) {
+                            R.string.settings_root_mode
+                        } else R.string.settings_standard_mode
+                    ),
+                    onClick = { showServiceModeDialog = true },
+                )
                 HorizontalDivider()
                 Column(
                     modifier = Modifier.fillMaxWidth().clickable(onClick = viewModel::requestBatteryOptimizationExemption).padding(vertical = 8.dp),
@@ -117,6 +133,67 @@ fun SettingsScreen(
                 HorizontalDivider()
                 SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
             }
+        }
+    }
+    if (showServiceModeDialog) {
+        val rootSelected = state.rootModeEnabled && state.rootConsentGiven
+        AlertDialog(
+            onDismissRequest = { showServiceModeDialog = false },
+            title = { Text(stringResource(R.string.settings_background)) },
+            text = {
+                Column {
+                    ServiceModeOption(
+                        title = stringResource(R.string.settings_standard_mode),
+                        description = stringResource(R.string.settings_standard_mode_description),
+                        selected = !rootSelected,
+                        onClick = { viewModel.setRootMode(false); showServiceModeDialog = false },
+                    )
+                    ServiceModeOption(
+                        title = stringResource(R.string.settings_root_mode),
+                        description = stringResource(
+                            if (state.rootCapability == RootCapability.AVAILABLE) {
+                                R.string.settings_root_mode_description
+                            } else R.string.settings_root_unavailable
+                        ),
+                        selected = rootSelected,
+                        enabled = state.rootCapability == RootCapability.AVAILABLE,
+                        onClick = { viewModel.setRootMode(true); showServiceModeDialog = false },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showServiceModeDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ServiceModeOption(
+    title: String,
+    description: String,
+    selected: Boolean,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                role = Role.RadioButton,
+                onClick = onClick,
+            )
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = onClick, enabled = enabled)
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
