@@ -37,6 +37,7 @@ import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
 import com.yihs.wolgateway.ui.screen.settings.SettingsViewModel
+import com.yihs.wolgateway.ui.screen.diagnostics.DiagnosticsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +48,7 @@ fun AppNavHost() {
     val apiSettingsViewModel: ApiSettingsViewModel = hiltViewModel()
     val tunnelViewModel: TunnelViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val diagnosticsViewModel: DiagnosticsViewModel = hiltViewModel()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
@@ -63,6 +65,7 @@ fun AppNavHost() {
         Screen.Settings.route -> stringResource(R.string.screen_settings)
         Screen.ApiSettings.route -> stringResource(R.string.screen_api_settings)
         Screen.Tunnel.route -> stringResource(R.string.screen_tunnel)
+        Screen.Diagnostics.route -> stringResource(R.string.screen_diagnostics)
         Screen.Details.route -> stringResource(R.string.screen_device_details)
         Screen.Form.route -> if (selectedDeviceId == null) {
             stringResource(R.string.screen_add_device)
@@ -155,6 +158,7 @@ fun AppNavHost() {
             apiSettingsViewModel = apiSettingsViewModel,
             tunnelViewModel = tunnelViewModel,
             settingsViewModel = settingsViewModel,
+            diagnosticsViewModel = diagnosticsViewModel,
             onCopyText = { text ->
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                     as android.content.ClipboardManager

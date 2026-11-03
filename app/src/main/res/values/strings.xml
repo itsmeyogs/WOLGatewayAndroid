@@ -5,6 +5,7 @@
     <string name="screen_settings">Settings</string>
     <string name="screen_api_settings">API settings</string>
     <string name="screen_tunnel">Tunnel</string>
+    <string name="screen_diagnostics">Diagnostics</string>
     <string name="screen_device_details">Device details</string>
     <string name="screen_add_device">Add device</string>
     <string name="screen_edit_device">Edit device</string>
@@ -96,6 +97,17 @@
     <string name="settings_root_mode_description">Runs the gateway service with root capabilities when detected.</string>
     <string name="settings_diagnostics">Diagnostics</string>
     <string name="settings_diagnostics_value">Available after gateway services are configured</string>
+    <string name="diagnostics_loading">Loading diagnostics…</string>
+    <string name="diagnostics_general">General</string>
+    <string name="diagnostics_standard_mode">Standard Mode</string>
+    <string name="diagnostics_root_mode">Root Mode</string>
+    <string name="diagnostics_last_errors">Last safe errors</string>
+    <string name="action_copy_diagnostics">Copy safe diagnostics</string>
+    <string name="diagnostics_app_version">App version</string>
+    <string name="diagnostics_android">Android</string>
+    <string name="diagnostics_abi">ABI</string>
+    <string name="diagnostics_device">Device</string>
+    <string name="diagnostics_network">Network</string>
     <string name="settings_root_mode">Root Mode</string>
     <string name="settings_root_available">Capability detected; explicit consent required</string>
     <string name="settings_root_unavailable">Unavailable; Standard Mode remains active</string>

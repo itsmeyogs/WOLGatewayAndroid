@@ -31,6 +31,7 @@ class GatewayService : Service() {
     @Inject lateinit var coordinator: GatewayCoordinator
     @Inject lateinit var gatewayServer: GatewayServer
     @Inject lateinit var tunnelController: TunnelController
+    @Inject lateinit var serviceState: GatewayServiceState
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var connectivityManager: ConnectivityManager
@@ -46,6 +47,7 @@ class GatewayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        serviceState.setRunning(true)
         createNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
@@ -85,6 +87,7 @@ class GatewayService : Service() {
     }
 
     override fun onDestroy() {
+        serviceState.setRunning(false)
         runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
         coordinator.stop()
         serviceScope.cancel()

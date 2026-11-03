@@ -38,6 +38,7 @@ import com.yihs.wolgateway.root.RootCapability
 fun SettingsScreen(
     onOpenApi: () -> Unit,
     onOpenTunnel: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -131,7 +132,11 @@ fun SettingsScreen(
                     }
                 }
                 HorizontalDivider()
-                SettingRow(stringResource(R.string.settings_diagnostics), stringResource(R.string.settings_diagnostics_value))
+                 SettingsLinkRow(
+                     title = stringResource(R.string.settings_diagnostics),
+                     description = stringResource(R.string.settings_diagnostics_value),
+                     onClick = onOpenDiagnostics,
+                 )
             }
         }
     }

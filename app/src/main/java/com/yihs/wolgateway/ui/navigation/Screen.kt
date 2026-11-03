@@ -8,6 +8,7 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object ApiSettings : Screen("settings/api")
     data object Tunnel : Screen("settings/tunnel")
+    data object Diagnostics : Screen("settings/diagnostics")
     data object Details : Screen("device/{deviceId}") {
         fun createRoute(deviceId: Long): String = "device/$deviceId"
     }

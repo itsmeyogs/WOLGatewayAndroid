@@ -19,6 +19,8 @@ import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelScreen
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
 import com.yihs.wolgateway.ui.screen.settings.SettingsViewModel
+import com.yihs.wolgateway.ui.screen.diagnostics.DiagnosticsScreen
+import com.yihs.wolgateway.ui.screen.diagnostics.DiagnosticsViewModel
 
 @Composable
 fun NavGraph(
@@ -30,6 +32,7 @@ fun NavGraph(
     apiSettingsViewModel: ApiSettingsViewModel,
     tunnelViewModel: TunnelViewModel,
     settingsViewModel: SettingsViewModel,
+    diagnosticsViewModel: DiagnosticsViewModel,
     onCopyText: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -59,6 +62,7 @@ fun NavGraph(
             SettingsScreen(
                 onOpenApi = { navController.navigate(Screen.ApiSettings.route) },
                 onOpenTunnel = { navController.navigate(Screen.Tunnel.route) },
+                onOpenDiagnostics = { navController.navigate(Screen.Diagnostics.route) },
                 viewModel = settingsViewModel,
             )
         }
@@ -72,6 +76,9 @@ fun NavGraph(
             TunnelScreen(
                 viewModel = tunnelViewModel,
             )
+        }
+        composable(Screen.Diagnostics.route) {
+            DiagnosticsScreen(viewModel = diagnosticsViewModel, onCopy = onCopyText)
         }
         composable(
             route = Screen.Details.route,
