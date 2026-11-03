@@ -14,8 +14,11 @@ import com.yihs.wolgateway.domain.usecase.WakeDeviceUseCase
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
 import com.yihs.wolgateway.gateway.routing.configureApiRoutes
+import com.yihs.wolgateway.diagnostics.DiagnosticsProvider
+import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.inject.Provider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +32,8 @@ class KtorGatewayServer @Inject constructor(
     private val tokenStore: ApiTokenStore,
     private val wakeDevice: WakeDeviceUseCase,
     private val checkDeviceStatus: CheckDeviceStatusUseCase,
+    private val diagnosticsProvider: Provider<DiagnosticsProvider>,
+    private val networkDiscovery: NetworkDiscovery,
 ) : GatewayServer {
     private val lock = Any()
     private var engine: EmbeddedServer<*, *>? = null
@@ -61,7 +66,14 @@ class KtorGatewayServer @Inject constructor(
                     json(Json { encodeDefaults = true; ignoreUnknownKeys = false })
                 }
                 configureApiErrorHandling()
-                configureApiRoutes(repository, tokenStore, wakeDevice, checkDeviceStatus)
+                 configureApiRoutes(
+                     repository = repository,
+                     tokenStore = tokenStore,
+                     wakeDevice = wakeDevice,
+                     checkDeviceStatus = checkDeviceStatus,
+                     diagnosticsProvider = diagnosticsProvider.get(),
+                     networkDiscovery = networkDiscovery,
+                 )
             }
                 .also {
                     try {

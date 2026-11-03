@@ -2,11 +2,15 @@ package com.yihs.wolgateway.network.discovery
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
+import com.yihs.wolgateway.root.RootCommandExecutor
+import com.yihs.wolgateway.root.RootSupervisor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -15,20 +19,17 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
-import kotlin.coroutines.coroutineContext
-import com.yihs.wolgateway.root.RootCommandExecutor
-import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class AndroidNetworkDiscovery @Inject constructor(
     private val rootExecutor: RootCommandExecutor,
+    private val rootSupervisor: RootSupervisor,
     private val preferences: DataStore<Preferences>,
 ) : NetworkDiscovery {
     override suspend fun scan(): List<DiscoveryResult> = withContext(Dispatchers.IO) {
         withTimeout(SCAN_TIMEOUT_MS) {
             val subnet = findSubnet() ?: return@withTimeout emptyList()
-            val rootMode = rootModeEnabled()
+            val rootMode = rootModeEnabled() && rootSupervisor.isRunning()
             val neighborMacs = if (rootMode) rootExecutor.neighborMacs() else emptyMap()
             val results = buildList {
                 subnet.hosts().chunked(MAX_CONCURRENT_PROBES).forEach { addresses ->
@@ -40,7 +41,7 @@ class AndroidNetworkDiscovery @Inject constructor(
                     })
                 }
             }
-            val modeStillAllowsRoot = rootModeEnabled()
+            val modeStillAllowsRoot = rootModeEnabled() && rootSupervisor.isRunning()
             DiscoveryResults.normalize(
                 if (modeStillAllowsRoot) results else results.map { it.copy(macAddress = null) },
             )
@@ -92,7 +93,7 @@ class AndroidNetworkDiscovery @Inject constructor(
             address.hostName.takeUnless { it == hostAddress }
         }
         val macAddress = macForDiscovery(
-            rootMode = rootMode && rootModeEnabled(),
+            rootMode = rootMode && rootModeEnabled() && rootSupervisor.isRunning(),
             address = hostAddress,
             neighborMacs = neighborMacs,
             resolveNeighborMac = rootExecutor::resolveNeighborMac,

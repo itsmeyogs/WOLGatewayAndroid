@@ -7,16 +7,20 @@ import com.yihs.wolgateway.domain.repository.DuplicateDeviceException
 import com.yihs.wolgateway.domain.usecase.CheckDeviceStatusUseCase
 import com.yihs.wolgateway.domain.usecase.WakeDeviceUseCase
 import com.yihs.wolgateway.domain.validation.InvalidDeviceException
+import com.yihs.wolgateway.diagnostics.DiagnosticsProvider
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.dto.ApiError
 import com.yihs.wolgateway.gateway.dto.ApiErrorResponse
 import com.yihs.wolgateway.gateway.dto.CreateDeviceRequest
 import com.yihs.wolgateway.gateway.dto.DeviceResponse
+import com.yihs.wolgateway.gateway.dto.DiscoveryResponse
 import com.yihs.wolgateway.gateway.dto.HealthResponse
+import com.yihs.wolgateway.gateway.dto.toResponse
 import com.yihs.wolgateway.gateway.dto.StatusResponse
 import com.yihs.wolgateway.gateway.dto.UpdateDeviceRequest
 import com.yihs.wolgateway.gateway.dto.WakeResponse
-import com.yihs.wolgateway.gateway.dto.toResponse
+import com.yihs.wolgateway.network.discovery.DiscoveryResults
+import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -32,6 +36,13 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.routing.intercept
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.CancellationException
 import java.security.MessageDigest
 
 private const val API_PREFIX = "/api/v1"
@@ -42,7 +53,10 @@ fun Application.configureApiRoutes(
     tokenStore: ApiTokenStore,
     wakeDevice: WakeDeviceUseCase,
     checkDeviceStatus: CheckDeviceStatusUseCase,
+    diagnosticsProvider: DiagnosticsProvider? = null,
+    networkDiscovery: NetworkDiscovery? = null,
 ) {
+    val discoveryMutex = Mutex()
     routing {
         get("$API_PREFIX/health") { call.respond(HealthResponse()) }
         route(API_PREFIX) {
@@ -50,6 +64,20 @@ fun Application.configureApiRoutes(
                 interceptAuthenticated(tokenStore)
                 get {
                     call.rejectOversizedRequest()
+                    val devices = repository.observeDevices().first()
+                    coroutineScope {
+                        devices.map { device ->
+                            async {
+                                try {
+                                    checkDeviceStatus(device.id)
+                                } catch (error: CancellationException) {
+                                    throw error
+                                } catch (_: Exception) {
+                                    // Keep the last persisted status when one target check fails.
+                                }
+                            }
+                        }.awaitAll()
+                    }
                     call.respond(repository.observeDevices().first().map(Device::toResponse))
                 }
                 post {
@@ -88,6 +116,33 @@ fun Application.configureApiRoutes(
                     }
                 }
             }
+            route("/diagnostics") {
+                interceptAuthenticated(tokenStore)
+                get {
+                    val provider = diagnosticsProvider ?: throw IllegalStateException("Diagnostics unavailable")
+                    call.respond(provider.snapshot().first().toResponse())
+                }
+            }
+            route("/discovery") {
+                interceptAuthenticated(tokenStore)
+                post("/scan") {
+                    val discovery = networkDiscovery ?: throw IllegalStateException("Discovery unavailable")
+                    val startedAt = System.nanoTime()
+                    val results = try {
+                        discoveryMutex.withLock { discovery.scan() }
+                    } catch (_: TimeoutCancellationException) {
+                        throw DiscoveryTimeoutException()
+                    }
+                    val savedDevices = repository.observeDevices().first()
+                    call.respond(
+                        DiscoveryResponse(
+                            durationMs = (System.nanoTime() - startedAt) / 1_000_000,
+                            devices = DiscoveryResults.excludeSavedAddresses(results, savedDevices)
+                                .map { it.toResponse() },
+                        ),
+                    )
+                }
+            }
         }
     }
 }
@@ -118,6 +173,8 @@ private suspend fun io.ktor.server.application.ApplicationCall.rejectOversizedRe
 }
 
 class RequestRejectedException : RuntimeException()
+
+class DiscoveryTimeoutException : RuntimeException()
 
 private fun io.ktor.server.application.ApplicationCall.deviceId(): Long = parameters["id"]?.toLongOrNull()
     ?.takeIf { it > 0 } ?: throw IllegalArgumentException("Invalid device ID")

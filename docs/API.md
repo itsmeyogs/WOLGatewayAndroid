@@ -15,6 +15,8 @@ The token is automatically generated on first Settings initialization and stored
 | Method | Path | Auth | Response |
 |---|---|---:|---|
 | GET | `/health` | No | `200 {"status":"ok"}` |
+| GET | `/diagnostics` | Yes | `200` safe gateway diagnostics |
+| POST | `/discovery/scan` | Yes | `200` completed LAN discovery result |
 | GET | `/devices` | Yes | `200` device array |
 | GET | `/devices/{id}` | Yes | `200` device |
 | POST | `/devices` | Yes | `201` device |
@@ -24,6 +26,12 @@ The token is automatically generated on first Settings initialization and stored
 | POST | `/devices/{id}/wake` | Yes | `200` WoL result |
 
 Full paths include the base path. For example, the health URL is `/api/v1/health`.
+
+`GET /api/v1/devices` runs a best-effort status check for all saved devices, then returns one snapshot with the latest persisted status. A client does not need to call `/status` for each device. If one target check fails, its last persisted status is returned and the overall response still succeeds.
+
+`GET /api/v1/diagnostics` returns a redacted, read-only gateway snapshot. It includes application/runtime facts, API/tunnel/service state, safe errors, and selected/effective service mode. It never returns tokens, credentials, raw shell output, commands, or sensitive paths.
+
+`POST /api/v1/discovery/scan` waits for the Android LAN scan to finish, up to the discovery timeout, then returns the final result. An empty `devices` array is valid. The scan does not persist devices; use `POST /api/v1/devices` after selecting a result. Discovery follows the effective runtime mode: Standard Mode uses the regular scan, while active Root Mode may resolve neighbor MAC addresses. Root fallback does not execute root commands from the API route.
 
 ### Expected status codes
 

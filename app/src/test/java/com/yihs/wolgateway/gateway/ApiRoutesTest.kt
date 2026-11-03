@@ -12,6 +12,8 @@ import com.yihs.wolgateway.domain.service.WolSender
 import com.yihs.wolgateway.domain.usecase.CheckDeviceStatusUseCase
 import com.yihs.wolgateway.domain.usecase.WakeDeviceUseCase
 import com.yihs.wolgateway.domain.validation.DeviceValidator
+import com.yihs.wolgateway.network.discovery.DiscoveryResult
+import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
 import com.yihs.wolgateway.gateway.routing.configureApiRoutes
@@ -65,7 +67,9 @@ class ApiRoutesTest {
             setBody(body)
         }
         assertEquals(HttpStatusCode.Created, created.status)
-        assertTrue(client.get("/api/v1/devices") { bearer() }.bodyAsText().contains("Office PC"))
+        val devices = client.get("/api/v1/devices") { bearer() }
+        assertTrue(devices.bodyAsText().contains("Office PC"))
+        assertTrue(devices.bodyAsText().contains("\"status\":\"ONLINE\""))
         assertEquals(HttpStatusCode.NoContent, client.delete("/api/v1/devices/1") { bearer() }.status)
     }
 
@@ -118,11 +122,32 @@ class ApiRoutesTest {
         assertEquals(HttpStatusCode.OK, client.post("/api/v1/devices/1/wake") { bearer() }.status)
     }
 
+    @Test
+    fun discoveryWaitsForScanAndReturnsReachableResults() = testApplication {
+        application {
+            installTestApi(
+                repository = FakeDeviceRepository(),
+                networkDiscovery = FakeNetworkDiscovery(
+                    listOf(DiscoveryResult("192.168.1.20", "Office PC", listOf(3389), null)),
+                ),
+            )
+        }
+
+        val response = client.post("/api/v1/discovery/scan") { bearer() }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("192.168.1.20"))
+        assertTrue(response.bodyAsText().contains("Office PC"))
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.bearer() {
         header(HttpHeaders.Authorization, "Bearer $token")
     }
 
-    private fun io.ktor.server.application.Application.installTestApi(repository: FakeDeviceRepository) {
+    private fun io.ktor.server.application.Application.installTestApi(
+        repository: FakeDeviceRepository,
+        networkDiscovery: NetworkDiscovery = FakeNetworkDiscovery(emptyList()),
+    ) {
         install(ContentNegotiation) { json(Json { encodeDefaults = true }) }
         configureApiErrorHandling()
         configureApiRoutes(
@@ -130,8 +155,15 @@ class ApiRoutesTest {
             tokenStore = FakeTokenStore(token),
             wakeDevice = WakeDeviceUseCase(repository, FakeWolSender()),
             checkDeviceStatus = CheckDeviceStatusUseCase(repository, FakeStatusChecker()),
+            networkDiscovery = networkDiscovery,
         )
     }
+}
+
+private class FakeNetworkDiscovery(
+    private val result: List<DiscoveryResult>,
+) : NetworkDiscovery {
+    override suspend fun scan(): List<DiscoveryResult> = result
 }
 
 private class FakeTokenStore(private var value: String) : ApiTokenStore {

@@ -17,6 +17,9 @@ import kotlinx.serialization.SerializationException
 
 fun Application.configureApiErrorHandling() {
     install(StatusPages) {
+        exception<DiscoveryTimeoutException> { call, _ ->
+            call.respond(HttpStatusCode.GatewayTimeout, ApiErrorResponse(ApiError("discovery_timeout", "Device discovery timed out")))
+        }
         exception<RequestRejectedException> { call, _ ->
             call.respond(HttpStatusCode.PayloadTooLarge, ApiErrorResponse(ApiError("request_too_large", "Request body is too large")))
         }

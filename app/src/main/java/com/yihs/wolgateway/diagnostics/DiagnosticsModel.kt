@@ -25,6 +25,8 @@ data class DiagnosticsSnapshot(
     val mode: DiagnosticsMode,
     val standard: List<DiagnosticItem>,
     val root: List<DiagnosticItem>,
+    val selectedMode: DiagnosticsMode = mode,
+    val effectiveMode: DiagnosticsMode = mode,
 )
 
 object DiagnosticsCopyFormatter {

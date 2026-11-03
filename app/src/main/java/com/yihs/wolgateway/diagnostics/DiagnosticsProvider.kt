@@ -45,7 +45,14 @@ class DiagnosticsProvider @Inject constructor(
         } else {
             RootCapability.UNKNOWN
         }
-        val rootMode = rootRequested && rootCapability == RootCapability.AVAILABLE
+        val selectedMode = if (rootRequested) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
+        val rootMode = rootRequested &&
+            rootCapability == RootCapability.AVAILABLE &&
+            supervisorState in setOf(
+                com.yihs.wolgateway.root.RootSupervisorState.STARTING,
+                com.yihs.wolgateway.root.RootSupervisorState.RUNNING,
+            )
+        val effectiveMode = if (rootMode) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
         val apiRunning = apiState == ServerState.RUNNING
         val tunnelConfigured = tunnel.tokenConfigured
         val notification = notificationStatus(serviceRunning)
@@ -84,10 +91,12 @@ class DiagnosticsProvider @Inject constructor(
                 tunnel.userMessage?.let(::add)
                 if (rootRequested && supervisorState.name == "FALLBACK") add("Root supervision fell back to Standard Mode")
             }.take(MAX_ERRORS),
-            mode = if (rootMode) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD,
-            standard = standard,
-            root = root,
-        )
+             mode = effectiveMode,
+             standard = standard,
+             root = root,
+             selectedMode = selectedMode,
+             effectiveMode = effectiveMode,
+         )
     }
 
     private fun item(label: String, value: String, status: DiagnosticStatus) = DiagnosticItem(
