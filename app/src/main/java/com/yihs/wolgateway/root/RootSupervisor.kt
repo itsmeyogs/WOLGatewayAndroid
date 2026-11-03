@@ -34,7 +34,11 @@ class RootSupervisor internal constructor(
     private val scope = CoroutineScope(config.dispatcher)
     private var watchdog: Job? = null
 
-    fun start(consentGiven: Boolean, apiPort: Int = 8080): Boolean = synchronized(lock) {
+    fun start(
+        consentGiven: Boolean,
+        apiPort: Int = 8080,
+        serviceAlreadyStarted: Boolean = false,
+    ): Boolean = synchronized(lock) {
         if (state == RootSupervisorState.RUNNING || state == RootSupervisorState.STARTING) return true
         if (!consentGiven || detector.detect() != RootCapability.AVAILABLE || !executor.verify()) {
             state = RootSupervisorState.FALLBACK
@@ -44,7 +48,9 @@ class RootSupervisor internal constructor(
         state = RootSupervisorState.STARTING
         _state.value = state
         port = apiPort
-        if (!executor.startGatewayService() || !executor.isGatewayServiceRunning()) {
+        if ((!serviceAlreadyStarted && !executor.startGatewayService()) ||
+            !executor.isGatewayServiceRunning()
+        ) {
             state = RootSupervisorState.FALLBACK
             _state.value = state
             return false
@@ -70,6 +76,10 @@ class RootSupervisor internal constructor(
             }
         }
         return true
+    }
+
+    fun isRunning(): Boolean = synchronized(lock) {
+        state == RootSupervisorState.RUNNING || state == RootSupervisorState.STARTING
     }
 
     private suspend fun restartWithBackoff(): Boolean {

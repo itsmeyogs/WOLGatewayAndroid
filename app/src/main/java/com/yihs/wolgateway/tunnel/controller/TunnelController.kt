@@ -135,13 +135,17 @@ class TunnelController @Inject constructor(
     }
 
     fun disconnect() {
+        scope.launch {
+            disconnectAndWait()
+        }
+    }
+
+    suspend fun disconnectAndWait() {
         monitorJob?.cancel()
         monitorJob = null
-        scope.launch {
-            lifecycleMutex.withLock {
-                runCatching { runtime.stop() }
-                _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null, userMessage = null)
-            }
+        lifecycleMutex.withLock {
+            runCatching { runtime.stop() }
+            _state.value = _state.value.copy(status = TunnelState.DISCONNECTED, error = null, userMessage = null)
         }
     }
 

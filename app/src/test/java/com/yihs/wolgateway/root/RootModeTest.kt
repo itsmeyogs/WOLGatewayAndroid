@@ -41,6 +41,26 @@ class RootModeTest {
         assertEquals(RootSupervisorState.STOPPED, supervisor.state)
     }
 
+    @Test fun supervisorDoesNotStartAServiceThatAlreadyExists() {
+        var starts = 0
+        val supervisor = RootSupervisor(
+            object : RootCapabilityDetector { override fun detect() = RootCapability.AVAILABLE },
+            object : RootCommandExecutor {
+                override fun verify() = true
+                override fun startGatewayService(): Boolean { starts++; return true }
+                override fun stopGatewayService() = true
+                override fun isGatewayServiceRunning() = true
+                override fun isApiReady(port: Int) = true
+                override fun neighborMacs() = emptyMap<String, String>()
+                override fun resolveNeighborMac(address: String) = null
+            },
+        )
+
+        assertTrue(supervisor.start(true, serviceAlreadyStarted = true))
+        assertEquals(0, starts)
+        supervisor.stop()
+    }
+
     @Test fun unavailableCapabilityFallsBack() {
         val supervisor = RootSupervisor(object : RootCapabilityDetector {
             override fun detect() = RootCapability.UNAVAILABLE

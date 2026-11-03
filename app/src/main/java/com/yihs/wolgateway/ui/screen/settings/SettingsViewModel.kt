@@ -12,6 +12,8 @@ import com.yihs.wolgateway.R
 import com.yihs.wolgateway.androidservice.GatewayService
 import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
 import com.yihs.wolgateway.tunnel.controller.TunnelController
+import com.yihs.wolgateway.androidservice.GatewayCoordinator
+import com.yihs.wolgateway.androidservice.GatewayServiceState
 import com.yihs.wolgateway.tunnel.controller.TunnelControllerError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -30,6 +32,8 @@ class SettingsViewModel @Inject constructor(
     private val preferences: DataStore<Preferences>,
     tunnelController: TunnelController,
     private val rootDetector: RootCapabilityDetector,
+    private val coordinator: GatewayCoordinator,
+    private val serviceState: GatewayServiceState,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(SettingsUiState())
     val state = _state.asStateFlow()
@@ -117,16 +121,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val capability = rootDetector.detect()
             if (enabled && capability != com.yihs.wolgateway.root.RootCapability.AVAILABLE) return@launch
-            preferences.edit {
-                it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = enabled
-                it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = enabled
-            }
-            // Re-enter the service lifecycle so the root request is made now,
-            // not only on the next boot or manual service start.
-            GatewayService.stop(context)
-            if (enabled || _state.value.autoStartApi || _state.value.autoStartTunnel) {
-                GatewayService.start(context)
-            }
+            coordinator.transitionMode(enabled, enabled)
         }
     }
 }

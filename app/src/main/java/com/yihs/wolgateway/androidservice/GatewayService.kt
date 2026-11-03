@@ -23,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import com.yihs.wolgateway.tunnel.model.TunnelState
 
@@ -47,7 +48,6 @@ class GatewayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        serviceState.setRunning(true)
         createNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
@@ -58,6 +58,9 @@ class GatewayService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification())
         }
+        serviceCreated.set(true)
+        startRequested.set(false)
+        serviceState.setRunning(true)
         connectivityManager = getSystemService(ConnectivityManager::class.java)
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
         serviceScope.launch {
@@ -87,10 +90,18 @@ class GatewayService : Service() {
     }
 
     override fun onDestroy() {
-        serviceState.setRunning(false)
         runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
         coordinator.stop()
         serviceScope.cancel()
+        serviceState.setRunning(false)
+        serviceCreated.set(false)
+        startRequested.set(false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         super.onDestroy()
     }
 
@@ -140,13 +151,32 @@ class GatewayService : Service() {
         const val ACTION_STOP = "com.yihs.wolgateway.action.STOP_SERVICE"
         private const val CHANNEL_ID = "gateway_service"
         private const val NOTIFICATION_ID = 1001
+        private val serviceCreated = AtomicBoolean(false)
+        private val startRequested = AtomicBoolean(false)
 
         fun start(context: android.content.Context) {
-            ContextCompat.startForegroundService(context, Intent(context, GatewayService::class.java))
+            if (serviceCreated.get() || !startRequested.compareAndSet(false, true)) return
+            try {
+                ContextCompat.startForegroundService(context, Intent(context, GatewayService::class.java))
+            } catch (error: RuntimeException) {
+                startRequested.set(false)
+                throw error
+            }
+        }
+
+        fun ensure(context: android.content.Context) {
+            val intent = Intent(context, GatewayService::class.java)
+            if (serviceCreated.get()) {
+                context.startService(intent)
+            } else {
+                start(context)
+            }
         }
 
         fun stop(context: android.content.Context) {
+            startRequested.set(false)
             context.stopService(Intent(context, GatewayService::class.java))
         }
+
     }
 }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import androidx.datastore.preferences.core.booleanPreferencesKey
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -21,7 +22,8 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val preferences: DataStore<Preferences> = appContext.gatewayPreferences()
                 val values = preferences.data.first()
-                if (values[GatewayStartupPreferences.AUTO_START_API] == true ||
+                if (values[API_SERVER_ENABLED] == true ||
+                    values[GatewayStartupPreferences.AUTO_START_API] == true ||
                     (values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
                         values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true) ||
                     values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
@@ -32,5 +34,9 @@ class BootReceiver : BroadcastReceiver() {
                 pendingResult.finish()
             }
         }
+    }
+
+    private companion object {
+        val API_SERVER_ENABLED = booleanPreferencesKey("api_server_enabled")
     }
 }

@@ -1,5 +1,6 @@
 package com.yihs.wolgateway.androidservice
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -10,17 +11,23 @@ import com.yihs.wolgateway.gateway.server.ServerState
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import com.yihs.wolgateway.root.RootSupervisor
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
+import androidx.datastore.preferences.core.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class GatewayCoordinator @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val preferences: DataStore<Preferences>,
     private val gatewayServer: GatewayServer,
     private val tunnelController: TunnelController,
     private val rootSupervisor: RootSupervisor,
+    private val serviceState: GatewayServiceState,
 ) {
     private val lifecycleMutex = Mutex()
 
@@ -29,10 +36,20 @@ class GatewayCoordinator @Inject constructor(
         val rootRequested = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true
         val rootConsented = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
         val port = values[API_PORT] ?: DEFAULT_API_PORT
-        if (rootRequested) rootSupervisor.start(rootConsented, port)
         val startApi = values[SERVER_ENABLED] == true || values[GatewayStartupPreferences.AUTO_START_API] == true
         val startTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
-        if (!startApi && !startTunnel) return@withLock false
+        if (!startApi && !startTunnel) {
+            rootSupervisor.stop()
+            return@withLock false
+        }
+
+        if (rootRequested) {
+            rootSupervisor.start(
+                consentGiven = rootConsented,
+                apiPort = port,
+                serviceAlreadyStarted = serviceState.running.value,
+            )
+        }
 
         if (gatewayServer.state.value != ServerState.RUNNING) {
             gatewayServer.configure(GatewayServerConfig(port))
@@ -43,6 +60,48 @@ class GatewayCoordinator @Inject constructor(
         }
         true
     }
+
+    suspend fun hasDesiredRuntime(): Boolean {
+        val values = preferences.data.first()
+        return values[SERVER_ENABLED] == true ||
+            values[GatewayStartupPreferences.AUTO_START_API] == true ||
+            values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
+    }
+
+    suspend fun transitionMode(rootEnabled: Boolean, rootConsented: Boolean): Boolean =
+        lifecycleMutex.withLock {
+            val before = preferences.data.first()
+            val shouldRun = before[SERVER_ENABLED] == true ||
+                before[GatewayStartupPreferences.AUTO_START_API] == true ||
+                before[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
+            val port = before[API_PORT] ?: DEFAULT_API_PORT
+
+            rootSupervisor.stop()
+            tunnelController.disconnectAndWait()
+            gatewayServer.stop()
+            GatewayService.stop(context)
+            val stopped = withTimeoutOrNull(SERVICE_STOP_TIMEOUT_MS) {
+                serviceState.running.filter { !it }.first()
+                true
+            } == true
+
+            preferences.edit {
+                it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = rootEnabled
+                it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = rootConsented
+            }
+            if (!shouldRun || !stopped) return@withLock stopped
+
+            if (rootEnabled) {
+                rootSupervisor.start(
+                    consentGiven = rootConsented,
+                    apiPort = port,
+                    serviceAlreadyStarted = false,
+                )
+            } else {
+                GatewayService.start(context)
+            }
+            true
+        }
 
     suspend fun reconnectTunnelIfEnabled() = lifecycleMutex.withLock {
         val values = preferences.data.first()
@@ -71,6 +130,7 @@ class GatewayCoordinator @Inject constructor(
         val SERVER_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("api_server_enabled")
         val AUTO_RECONNECT = androidx.datastore.preferences.core.booleanPreferencesKey("tunnel_auto_reconnect")
         const val DEFAULT_API_PORT = 8080
+        const val SERVICE_STOP_TIMEOUT_MS = 5_000L
 
         fun localApiOrigin(port: Int): String = "127.0.0.1:$port"
     }
