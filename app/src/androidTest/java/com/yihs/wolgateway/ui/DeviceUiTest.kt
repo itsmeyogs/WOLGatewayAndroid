@@ -27,7 +27,7 @@ class DeviceUiTest {
                     name = "Office PC",
                     ipAddress = "192.168.1.20",
                     macAddress = "AA:BB:CC:DD:EE:FF",
-                    status = DeviceStatus.ONLINE,
+                    status = DeviceStatus.UNKNOWN,
                 ),
                 onWake = { wakeClicked = true },
                 onOpen = {},
@@ -35,7 +35,7 @@ class DeviceUiTest {
         }
 
         composeRule.onNodeWithText("Office PC").assertExists()
-        composeRule.onNodeWithText("ONLINE").assertExists()
+        composeRule.onNodeWithText("UNKNOWN").assertExists()
         composeRule.onNodeWithText("192.168.1.20").assertExists()
         composeRule.onNodeWithContentDescription("Device Office PC").assertTextContains("Office PC")
         composeRule.onNodeWithText("Wake").performClick()

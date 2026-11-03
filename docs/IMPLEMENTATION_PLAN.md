@@ -133,6 +133,7 @@ CP10 code scope is complete: root service supervision, service inspection, API r
 ### CP11 — Integration/regression
 
 Run UI→domain→DB, API→domain→WoL, local tunnel→Ktor, then external tunnel→API, reconnect, background, security, UI consistency, documentation, and Git checks.
+**Status: PASS (automated and user-confirmed device validation).** UI/device flow, API/WoL, local/external tunnel, reconnect after network loss, reboot auto-start, Standard Mode, Root Mode observable behavior, and security checks passed. Root validation scope is limited to observable behavior such as auto-start timing and MAC scanning; deeper watchdog fault injection is not claimed. Automated evidence: `reports/checkpoints/CP11-integration-regression.md`.
 Acceptance: all criteria PASS or explicitly approved blockers.
 
 ### CP12 — Diagnostics

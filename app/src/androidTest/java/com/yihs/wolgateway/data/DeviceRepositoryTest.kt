@@ -55,11 +55,13 @@ class DeviceRepositoryTest {
     }
 
     @Test
-    fun duplicateMacIsRejected() = runBlocking {
-        repository.addDevice(device())
+    fun duplicateMacIsRejected() {
+        runBlocking {
+            repository.addDevice(device())
 
-        assertThrows(DuplicateDeviceException::class.java) {
-            runBlocking { repository.addDevice(device().copy(name = "Second PC", ipAddress = "192.168.1.21")) }
+            assertThrows(DuplicateDeviceException::class.java) {
+                runBlocking { repository.addDevice(device().copy(name = "Second PC", ipAddress = "192.168.1.21")) }
+            }
         }
     }
 

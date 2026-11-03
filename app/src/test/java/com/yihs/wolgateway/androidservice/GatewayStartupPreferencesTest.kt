@@ -15,7 +15,7 @@ class GatewayStartupPreferencesTest {
     @Test
     fun startupPreferencesKeepApiAndTunnelIndependent() = runTest {
         val directory = createTempDirectory("startup").toFile()
-        val store = PreferenceDataStoreFactory.create { File(directory, "gateway.preferences") }
+        val store = PreferenceDataStoreFactory.create { File(directory, "gateway.preferences_pb") }
         store.edit { it[GatewayStartupPreferences.AUTO_START_API] = true }
         val values = store.data.first()
         assertTrue(values[GatewayStartupPreferences.AUTO_START_API] == true)

@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,17 +17,21 @@ enum class RootSupervisorState { STOPPED, STARTING, RUNNING, RESTARTING, FALLBAC
 
 /** Root lifecycle boundary. No arbitrary shell execution is exposed. */
 @Singleton
-class RootSupervisor @Inject constructor(
+class RootSupervisor internal constructor(
     private val detector: RootCapabilityDetector,
     private val executor: RootCommandExecutor,
+    private val config: Config,
 ) {
+    @Inject
+    constructor(detector: RootCapabilityDetector, executor: RootCommandExecutor) : this(detector, executor, Config())
+
     private val lock = Any()
     var state: RootSupervisorState = RootSupervisorState.STOPPED
         private set
     private val _state = MutableStateFlow(state)
     val stateFlow: StateFlow<RootSupervisorState> = _state.asStateFlow()
     private var port = 8080
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(config.dispatcher)
     private var watchdog: Job? = null
 
     fun start(consentGiven: Boolean, apiPort: Int = 8080): Boolean = synchronized(lock) {
@@ -49,7 +54,7 @@ class RootSupervisor @Inject constructor(
         watchdog?.cancel()
         watchdog = scope.launch {
             while (isActive) {
-                delay(WATCHDOG_INTERVAL_MS)
+                delay(config.watchdogIntervalMs)
                 if (state != RootSupervisorState.RUNNING) break
                 if (!executor.isGatewayServiceRunning() || !executor.isApiReady(port)) {
                     state = RootSupervisorState.RESTARTING
@@ -68,8 +73,8 @@ class RootSupervisor @Inject constructor(
     }
 
     private suspend fun restartWithBackoff(): Boolean {
-        repeat(MAX_RESTART_ATTEMPTS) { attempt ->
-            delay(RESTART_BACKOFF_MS * (attempt + 1))
+        repeat(config.maxRestartAttempts) { attempt ->
+            delay(config.restartBackoffMs * (attempt + 1))
             if (executor.startGatewayService() && executor.isGatewayServiceRunning()) return true
         }
         return false
@@ -85,9 +90,10 @@ class RootSupervisor @Inject constructor(
         _state.value = state
     }
 
-    private companion object {
-        const val WATCHDOG_INTERVAL_MS = 5_000L
-        const val RESTART_BACKOFF_MS = 1_000L
-        const val MAX_RESTART_ATTEMPTS = 3
-    }
+    internal data class Config(
+        val dispatcher: CoroutineContext = Dispatchers.IO,
+        val watchdogIntervalMs: Long = 5_000L,
+        val restartBackoffMs: Long = 1_000L,
+        val maxRestartAttempts: Int = 3,
+    )
 }
