@@ -11,15 +11,20 @@ sealed class Screen(val route: String) {
     data object Details : Screen("device/{deviceId}") {
         fun createRoute(deviceId: Long): String = "device/$deviceId"
     }
-    data object Form : Screen("device-form?deviceId={deviceId}&ip={ip}") {
+    data object Form : Screen("device-form?deviceId={deviceId}&ip={ip}&mac={mac}") {
         const val deviceIdArgument = "deviceId"
         const val ipArgument = "ip"
-        fun createRoute(deviceId: Long? = null, ipAddress: String? = null): String = buildString {
+        const val macArgument = "mac"
+        fun createRoute(deviceId: Long? = null, ipAddress: String? = null, macAddress: String? = null): String = buildString {
             append("device-form")
             deviceId?.let { append("?deviceId=$it") }
             ipAddress?.let {
                 append(if (contains("?")) '&' else '?')
                 append("ip=${Uri.encode(it)}")
+            }
+            macAddress?.takeIf { it.isNotBlank() }?.let {
+                append(if (contains("?")) '&' else '?')
+                append("mac=${Uri.encode(it)}")
             }
         }
     }

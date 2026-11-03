@@ -35,7 +35,7 @@ import com.yihs.wolgateway.network.discovery.DiscoveryResult
 @Composable
 fun AddDevicesScreen(
     onRegisterManually: () -> Unit,
-    onRegisterDiscovered: (String) -> Unit,
+    onRegisterDiscovered: (DiscoveryResult) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AddDevicesViewModel = hiltViewModel(),
 ) {
@@ -80,7 +80,7 @@ fun AddDevicesScreen(
 private fun CompleteScanContent(
     devices: List<DiscoveryResult>,
     onRefresh: () -> Unit,
-    onRegisterDiscovered: (String) -> Unit,
+    onRegisterDiscovered: (DiscoveryResult) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val refreshState = rememberPullToRefreshState()
@@ -115,7 +115,7 @@ private fun CompleteScanContent(
                     items(devices, key = { it.address }) { device ->
                         ScanResultRow(
                             result = device,
-                            onRegister = { onRegisterDiscovered(device.address) },
+                            onRegister = { onRegisterDiscovered(device) },
                         )
                     }
                 }
@@ -158,7 +158,7 @@ private fun ScanResultRow(result: DiscoveryResult, onRegister: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(result.address, style = MaterialTheme.typography.bodyLarge)
             Text(
-                stringResource(R.string.add_devices_mac_unavailable),
+                result.macAddress ?: stringResource(R.string.add_devices_mac_unavailable),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

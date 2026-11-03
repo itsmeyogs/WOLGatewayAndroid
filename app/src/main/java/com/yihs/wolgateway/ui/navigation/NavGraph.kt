@@ -11,6 +11,7 @@ import com.yihs.wolgateway.ui.screen.devices.DevicesScreen
 import com.yihs.wolgateway.ui.screen.device.detail.DeviceDetailsScreen
 import com.yihs.wolgateway.ui.screen.device.form.DeviceFormScreen
 import com.yihs.wolgateway.ui.screen.add_devices.AddDevicesScreen
+import com.yihs.wolgateway.network.discovery.DiscoveryResult
 import com.yihs.wolgateway.ui.screen.settings.SettingsScreen
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsScreen
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
@@ -49,7 +50,9 @@ fun NavGraph(
         composable(Screen.AddDevices.route) {
             AddDevicesScreen(
                 onRegisterManually = { navController.navigate(Screen.Form.createRoute()) },
-                onRegisterDiscovered = { ip -> navController.navigate(Screen.Form.createRoute(ipAddress = ip)) },
+                onRegisterDiscovered = { result: DiscoveryResult ->
+                    navController.navigate(Screen.Form.createRoute(ipAddress = result.address, macAddress = result.macAddress))
+                },
             )
         }
         composable(Screen.Settings.route) {
@@ -92,13 +95,19 @@ fun NavGraph(
                     type = NavType.StringType
                     defaultValue = ""
                 },
+                navArgument(Screen.Form.macArgument) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
             ),
         ) { entry ->
             val rawDeviceId = entry.arguments?.getLong(Screen.Form.deviceIdArgument) ?: -1L
             val discoveredIp = entry.arguments?.getString(Screen.Form.ipArgument).orEmpty()
+            val discoveredMac = entry.arguments?.getString(Screen.Form.macArgument).orEmpty()
             DeviceFormScreen(
                 deviceId = rawDeviceId.takeUnless { it == -1L },
                 initialIpAddress = discoveredIp,
+                initialMacAddress = discoveredMac,
                 viewModel = devicesViewModel,
                 onSaved = {
                     if (rawDeviceId == -1L) {

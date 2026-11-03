@@ -35,6 +35,7 @@ import com.yihs.wolgateway.R
 fun DeviceFormScreen(
     deviceId: Long?,
     initialIpAddress: String = "",
+    initialMacAddress: String = "",
     onSaved: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
@@ -44,7 +45,7 @@ fun DeviceFormScreen(
     val errors by viewModel.fieldErrors.collectAsStateWithLifecycle()
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
     var ip by remember(existing, initialIpAddress) { mutableStateOf(existing?.ipAddress ?: initialIpAddress) }
-    var mac by remember(existing) { mutableStateOf(existing?.macAddress.orEmpty()) }
+    var mac by remember(existing, initialMacAddress) { mutableStateOf(existing?.macAddress ?: initialMacAddress) }
     var broadcast by remember(existing) { mutableStateOf(existing?.broadcastAddress ?: "255.255.255.255") }
     var wolPort by remember(existing) { mutableStateOf(existing?.wolPort?.toString() ?: "9") }
     var saving by remember { mutableStateOf(false) }
