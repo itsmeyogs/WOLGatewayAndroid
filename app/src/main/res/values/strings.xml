@@ -89,7 +89,7 @@
     <string name="event_tunnel_runtime_unavailable">Cloudflare runtime is unavailable; install the verified ARM64 runtime before connecting</string>
     <string name="event_tunnel_start_failed">Cloudflare runtime failed to start; copy Logcat tag WolGatewayTunnel for details</string>
     <string name="validation_tunnel_token_invalid">Tunnel token must contain 32–8192 printable characters</string>
-    <string name="settings_background">Background</string>
+    <string name="settings_background">Service Mode</string>
     <string name="settings_background_value">Standard Mode</string>
     <string name="settings_standard_mode">Standard Mode</string>
     <string name="settings_standard_mode_description">Runs the gateway with regular Android service permissions.</string>

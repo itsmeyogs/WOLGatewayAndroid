@@ -8,6 +8,7 @@ import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.server.ServerState
 import com.yihs.wolgateway.tunnel.controller.TunnelController
+import com.yihs.wolgateway.root.RootSupervisor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -19,16 +20,20 @@ class GatewayCoordinator @Inject constructor(
     private val preferences: DataStore<Preferences>,
     private val gatewayServer: GatewayServer,
     private val tunnelController: TunnelController,
+    private val rootSupervisor: RootSupervisor,
 ) {
     private val lifecycleMutex = Mutex()
 
     suspend fun startFromPreferences(): Boolean = lifecycleMutex.withLock {
         val values = preferences.data.first()
+        val rootRequested = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true
+        val rootConsented = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
+        val port = values[API_PORT] ?: DEFAULT_API_PORT
+        if (rootRequested) rootSupervisor.start(rootConsented, port)
         val startApi = values[SERVER_ENABLED] == true || values[GatewayStartupPreferences.AUTO_START_API] == true
         val startTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
         if (!startApi && !startTunnel) return@withLock false
 
-        val port = values[API_PORT] ?: DEFAULT_API_PORT
         if (gatewayServer.state.value != ServerState.RUNNING) {
             gatewayServer.configure(GatewayServerConfig(port))
             gatewayServer.start()
@@ -56,6 +61,7 @@ class GatewayCoordinator @Inject constructor(
     }
 
     fun stop() {
+        rootSupervisor.stop()
         tunnelController.disconnect()
         gatewayServer.stop()
     }

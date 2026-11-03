@@ -22,6 +22,8 @@ class BootReceiver : BroadcastReceiver() {
                 val preferences: DataStore<Preferences> = appContext.gatewayPreferences()
                 val values = preferences.data.first()
                 if (values[GatewayStartupPreferences.AUTO_START_API] == true ||
+                    (values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
+                        values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true) ||
                     values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
                 ) {
                     GatewayService.start(appContext)

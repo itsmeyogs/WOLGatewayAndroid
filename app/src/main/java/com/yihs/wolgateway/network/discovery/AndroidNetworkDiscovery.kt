@@ -14,16 +14,21 @@ import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
 import kotlin.coroutines.coroutineContext
+import com.yihs.wolgateway.root.RootCommandExecutor
+import javax.inject.Inject
 
-class AndroidNetworkDiscovery : NetworkDiscovery {
+class AndroidNetworkDiscovery @Inject constructor(
+    private val rootExecutor: RootCommandExecutor,
+) : NetworkDiscovery {
     override suspend fun scan(): List<DiscoveryResult> = withContext(Dispatchers.IO) {
         withTimeout(SCAN_TIMEOUT_MS) {
             val subnet = findSubnet() ?: return@withTimeout emptyList()
+            val neighborMacs = rootExecutor.neighborMacs()
             val results = buildList {
                 subnet.hosts().chunked(MAX_CONCURRENT_PROBES).forEach { addresses ->
                     coroutineContext.ensureActive()
                     addAll(coroutineScope {
-                        addresses.map { address -> async { probe(address) } }.awaitAll().filterNotNull()
+                        addresses.map { address -> async { probe(address, neighborMacs) } }.awaitAll().filterNotNull()
                     })
                 }
             }
@@ -53,7 +58,7 @@ class AndroidNetworkDiscovery : NetworkDiscovery {
         else -> 3
     }
 
-    private suspend fun probe(address: InetAddress): DiscoveryResult? = withTimeoutOrNull(HOST_TIMEOUT_MS) {
+    private suspend fun probe(address: InetAddress, neighborMacs: Map<String, String>): DiscoveryResult? = withTimeoutOrNull(HOST_TIMEOUT_MS) {
         val openPorts = coroutineScope {
             COMMON_PORTS.map { port -> async { port.takeIf { isOpen(address, it) } } }
                 .awaitAll()
@@ -65,7 +70,8 @@ class AndroidNetworkDiscovery : NetworkDiscovery {
         val hostName = withTimeoutOrNull(HOSTNAME_TIMEOUT_MS) {
             address.hostName.takeUnless { it == hostAddress }
         }
-        DiscoveryResult(hostAddress, hostName, openPorts)
+        val macAddress = neighborMacs[hostAddress] ?: rootExecutor.resolveNeighborMac(hostAddress)
+        DiscoveryResult(hostAddress, hostName, openPorts, macAddress)
     }
 
     private fun isOpen(address: InetAddress, port: Int): Boolean = runCatching {

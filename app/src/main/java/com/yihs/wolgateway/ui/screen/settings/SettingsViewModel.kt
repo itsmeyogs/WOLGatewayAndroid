@@ -121,6 +121,12 @@ class SettingsViewModel @Inject constructor(
                 it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = enabled
                 it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = enabled
             }
+            // Re-enter the service lifecycle so the root request is made now,
+            // not only on the next boot or manual service start.
+            GatewayService.stop(context)
+            if (enabled || _state.value.autoStartApi || _state.value.autoStartTunnel) {
+                GatewayService.start(context)
+            }
         }
     }
 }

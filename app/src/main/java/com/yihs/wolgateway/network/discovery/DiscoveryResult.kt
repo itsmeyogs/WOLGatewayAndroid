@@ -4,4 +4,5 @@ data class DiscoveryResult(
     val address: String,
     val hostName: String? = null,
     val openPorts: List<Int> = emptyList(),
+    val macAddress: String? = null,
 )

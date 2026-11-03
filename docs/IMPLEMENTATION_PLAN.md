@@ -118,10 +118,17 @@ Implemented Standard Mode foreground service, persistent notification, shared AP
 Standard Mode validation passes on Android 10 and Android 13 device two. Android 13 device one has an OEM-specific `PermissionHelper` process-kill behavior when notification permission changes; this remains documented as a device limitation, without a vendor-specific workaround.
 Acceptance: user-approved. Boot recovery, API-only/API+tunnel autostart, network recovery, process-death behavior, battery optimization guidance, Android 13 notification behavior, and OEM/device validation are PASS. Build/test commands were unavailable because Java Runtime was unavailable; user-approved as PASS. Evidence: `reports/checkpoints/CP9-background-service.md` and `reports/checkpoints/CP9-battery-guidance.md`.
 
-### CP10 — Root Mode
+### CP10 — Root Mode — PASS (device validated; build/test blocked)
 
-Implement last, only after Standard Mode is stable and CP10 scope is justified. Isolate root capability, consent, supervisor/diagnostics, neighbor-table adapter, and fallback.
-Acceptance: Standard Mode unaffected. Missing rooted hardware means BLOCKED, not PASS.
+**Status: PASS for implemented and manually validated scope.** Root capability/consent is wired to an isolated `RootSupervisor`; coordinator and boot recovery enter root supervision only when enabled and consented, otherwise Standard Mode remains the fallback. No arbitrary shell execution is exposed.
+
+Build and unit-test execution remains blocked by the local environment lacking a Java Runtime. Root-specific diagnostics remain part of CP12, not CP10. Manual rooted-device validation passed for Kitsune consent, root-aware autostart after reboot, foreground service/process presence, root `ip neigh`, and MAC discovery after reinstalling the current APK. Failure/fallback and watchdog fault injection remain unverified on hardware.
+
+Root supervision target: `BOOT_COMPLETED` → root supervisor → gateway runtime → API/tunnel readiness → watchdog/restart. It must not imply that the UI launches faster, and it must not claim that root bypasses every Android/OEM restriction. Compare measured `BOOT_COMPLETED`, supervisor start, API listening, and tunnel connected timestamps against Standard Mode on the same Android 13 device.
+
+Implementation decision: use a privileged root watchdog for the app-UID `GatewayService`. Do not run Ktor, Keystore, Room, or tunnel credentials as UID 0. A native UID-0 daemon requires authenticated IPC, separate native packaging, and a new threat model; it is intentionally out of scope.
+
+CP10 code scope is complete: root service supervision, service inspection, API readiness probing, synchronized/idempotent lifecycle, bounded restart/backoff, and safe fallback are implemented. Tunnel recovery remains owned by the existing `TunnelController` and network callback, not duplicated by root.
 
 ### CP11 — Integration/regression
 

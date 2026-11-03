@@ -100,7 +100,7 @@ Pada sebagian OEM/ROM Android 13, perubahan permission dapat membunuh process me
 
 ### FR-09 Root Mode
 
-Root Mode optional dan menjadi checkpoint terakhir setelah Standard Mode stabil. Fitur mencakup capability detection, consent, advanced startup/supervision/diagnostics jika layak, serta fallback Standard Mode. Tidak ada shell arbitrer atau input command tak tervalidasi.
+Root Mode optional dan menjadi checkpoint terakhir setelah Standard Mode stabil. Implementasi tervalidasi pada perangkat rooted mencakup capability detection berbasis `su -c id`, consent Kitsune, root-aware autostart, supervision, discovery `ip neigh`, serta fallback Standard Mode. Root supervision hanya boleh menjalankan lifecycle gateway yang allowlisted, bounded restart/backoff, dan readiness check; tidak ada shell arbitrer atau input command tak tervalidasi. Root tidak menjamin UI lebih cepat atau menghapus seluruh batasan Android/OEM. MAC discovery tetap bergantung pada host satu LAN dan respons ARP/ping.
 
 ### FR-10 Status monitoring
 

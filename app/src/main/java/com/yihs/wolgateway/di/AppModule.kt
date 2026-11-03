@@ -29,6 +29,8 @@ import com.yihs.wolgateway.domain.service.StatusChecker
 import com.yihs.wolgateway.domain.service.WolSender
 import com.yihs.wolgateway.root.AndroidRootCapabilityDetector
 import com.yihs.wolgateway.root.RootCapabilityDetector
+import com.yihs.wolgateway.root.AndroidRootCommandExecutor
+import com.yihs.wolgateway.root.RootCommandExecutor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,6 +44,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideRootCapabilityDetector(): RootCapabilityDetector = AndroidRootCapabilityDetector()
+    @Provides
+    @Singleton
+    fun provideRootCommandExecutor(executor: AndroidRootCommandExecutor): RootCommandExecutor = executor
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): GatewayDatabase =
@@ -79,7 +84,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideNetworkDiscovery(): NetworkDiscovery = AndroidNetworkDiscovery()
+    fun provideNetworkDiscovery(discovery: AndroidNetworkDiscovery): NetworkDiscovery = discovery
 
     @Provides
     @Singleton

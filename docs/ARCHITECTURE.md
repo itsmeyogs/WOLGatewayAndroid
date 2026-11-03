@@ -1,6 +1,6 @@
 # Architecture — WoL Gateway
 
-**Status:** CP6 REST API, CP7 Cloudflare runtime, and CP9 Standard Mode background service implemented and user-approved; CP7 and CP9 device validation passed; root layer remains planned
+**Status:** CP6 REST API, CP7 Cloudflare runtime, CP9 Standard Mode background service, and CP10 Root Mode implemented; CP7, CP9, and CP10 manual device validation passed for their validated scopes; automated build/test validation remains environment-blocked
 **Prinsip:** dependency direction jelas, mode standar tidak bergantung root/tunnel, resource lifecycle eksplisit.
 
 ## 1. Bentuk deployment
@@ -58,7 +58,9 @@ Sebagian OEM/ROM Android 13 dapat membunuh process saat permission berubah melal
 
 ### Root
 
-`RootCapabilityDetector`, `RootDiagnosticsAdapter`, optional supervisor/discovery adapter. Interface berada di domain/tunnel boundary; implementasi root tidak bocor ke UI atau repository.
+`RootCapabilityDetector`, `RootSupervisor`, `RootDiagnosticsAdapter`, optional supervisor/discovery adapter. `RootSupervisor` requires capability plus explicit consent, exposes only safe lifecycle state, and falls back without arbitrary shell execution. Root supervision owns gateway service lifecycle through a fixed `su` allowlist, service inspection, bounded three-attempt restart/backoff, and fallback to `GatewayService`; it does not replace the API or tunnel implementation. The selected security boundary is a privileged watchdog supervising the app-UID service, not running Ktor, Keystore, Room, or tunnel credentials as UID 0. A native UID-0 daemon would require authenticated IPC and a separate threat model, so it is out of scope. Interface berada di domain/tunnel boundary; implementasi root tidak bocor ke UI atau repository.
+
+Root Mode is not merely a faster `GatewayService` start. Standard Mode delegates lifecycle to Android foreground-service rules. Root Mode may supervise the gateway runtime with root privilege after explicit consent, detect process death, and restart it. Android 13 boot delivery, OEM policy, battery policy, notification behavior, and force-stop semantics remain device-dependent. Root supervision must never accept arbitrary shell commands, expose raw `su` output, or run beside a second gateway instance. Root discovery may warm the ARP table with an allowlisted ping, then read `ip neigh`; MAC availability still depends on same-LAN reachability and neighbor-cache behavior.
 
 ## 3. Package layout
 
