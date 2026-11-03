@@ -20,6 +20,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.put
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -78,6 +79,43 @@ class ApiRoutesTest {
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertTrue(response.bodyAsText().contains("validation_failed"))
+    }
+
+    @Test
+    fun protectedRoutesReturnExpectedNotFoundAndInvalidTokenResponses() = testApplication {
+        application { installTestApi(FakeDeviceRepository()) }
+
+        assertEquals(HttpStatusCode.Unauthorized, client.get("/api/v1/devices") {
+            header(HttpHeaders.Authorization, "Bearer wrong-token")
+        }.status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/devices/999") { bearer() }.status)
+        assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/devices/999/status") { bearer() }.status)
+        assertEquals(HttpStatusCode.NotFound, client.post("/api/v1/devices/999/wake") { bearer() }.status)
+        assertEquals(HttpStatusCode.NotFound, client.delete("/api/v1/devices/999") { bearer() }.status)
+    }
+
+    @Test
+    fun updateAndOperationRoutesUseSharedRepositoryAndUseCases() = testApplication {
+        val repository = FakeDeviceRepository()
+        application { installTestApi(repository) }
+        val body = """
+            {"name":"Office PC","ipAddress":"192.168.1.20","macAddress":"AA:BB:CC:DD:EE:FF"}
+        """.trimIndent()
+        client.post("/api/v1/devices") {
+            bearer()
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
+
+        val updated = client.put("/api/v1/devices/1") {
+            bearer()
+            contentType(ContentType.Application.Json)
+            setBody(body.replace("Office PC", "Updated PC"))
+        }
+        assertEquals(HttpStatusCode.OK, updated.status)
+        assertTrue(updated.bodyAsText().contains("Updated PC"))
+        assertEquals(HttpStatusCode.OK, client.get("/api/v1/devices/1/status") { bearer() }.status)
+        assertEquals(HttpStatusCode.OK, client.post("/api/v1/devices/1/wake") { bearer() }.status)
     }
 
     private fun io.ktor.client.request.HttpRequestBuilder.bearer() {

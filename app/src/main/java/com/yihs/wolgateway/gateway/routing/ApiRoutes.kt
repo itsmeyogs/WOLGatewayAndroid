@@ -71,7 +71,9 @@ fun Application.configureApiRoutes(
                         call.respond(repository.getDevice(id)!!.toResponse())
                     }
                     delete {
-                        repository.deleteDevice(call.deviceId())
+                        val id = call.deviceId()
+                        if (repository.getDevice(id) == null) throw DeviceNotFoundException(id)
+                        repository.deleteDevice(id)
                         call.respond(HttpStatusCode.NoContent)
                     }
                     get("/status") {
