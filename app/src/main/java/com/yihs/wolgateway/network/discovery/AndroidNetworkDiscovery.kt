@@ -1,5 +1,7 @@
 package com.yihs.wolgateway.network.discovery
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -15,25 +17,40 @@ import java.net.NetworkInterface
 import java.net.Socket
 import kotlin.coroutines.coroutineContext
 import com.yihs.wolgateway.root.RootCommandExecutor
+import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class AndroidNetworkDiscovery @Inject constructor(
     private val rootExecutor: RootCommandExecutor,
+    private val preferences: DataStore<Preferences>,
 ) : NetworkDiscovery {
     override suspend fun scan(): List<DiscoveryResult> = withContext(Dispatchers.IO) {
         withTimeout(SCAN_TIMEOUT_MS) {
             val subnet = findSubnet() ?: return@withTimeout emptyList()
-            val neighborMacs = rootExecutor.neighborMacs()
+            val rootMode = rootModeEnabled()
+            val neighborMacs = if (rootMode) rootExecutor.neighborMacs() else emptyMap()
             val results = buildList {
                 subnet.hosts().chunked(MAX_CONCURRENT_PROBES).forEach { addresses ->
                     coroutineContext.ensureActive()
                     addAll(coroutineScope {
-                        addresses.map { address -> async { probe(address, neighborMacs) } }.awaitAll().filterNotNull()
+                        addresses.map { address ->
+                            async { probe(address, rootMode, neighborMacs) }
+                        }.awaitAll().filterNotNull()
                     })
                 }
             }
-            DiscoveryResults.normalize(results)
+            val modeStillAllowsRoot = rootModeEnabled()
+            DiscoveryResults.normalize(
+                if (modeStillAllowsRoot) results else results.map { it.copy(macAddress = null) },
+            )
         }
+    }
+
+    private suspend fun rootModeEnabled(): Boolean {
+        val values = preferences.data.first()
+        return values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
+            values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
     }
 
     private fun findSubnet(): Ipv4Subnet? = NetworkInterface.getNetworkInterfaces()
@@ -58,7 +75,11 @@ class AndroidNetworkDiscovery @Inject constructor(
         else -> 3
     }
 
-    private suspend fun probe(address: InetAddress, neighborMacs: Map<String, String>): DiscoveryResult? = withTimeoutOrNull(HOST_TIMEOUT_MS) {
+    private suspend fun probe(
+        address: InetAddress,
+        rootMode: Boolean,
+        neighborMacs: Map<String, String>,
+    ): DiscoveryResult? = withTimeoutOrNull(HOST_TIMEOUT_MS) {
         val openPorts = coroutineScope {
             COMMON_PORTS.map { port -> async { port.takeIf { isOpen(address, it) } } }
                 .awaitAll()
@@ -70,7 +91,12 @@ class AndroidNetworkDiscovery @Inject constructor(
         val hostName = withTimeoutOrNull(HOSTNAME_TIMEOUT_MS) {
             address.hostName.takeUnless { it == hostAddress }
         }
-        val macAddress = neighborMacs[hostAddress] ?: rootExecutor.resolveNeighborMac(hostAddress)
+        val macAddress = macForDiscovery(
+            rootMode = rootMode && rootModeEnabled(),
+            address = hostAddress,
+            neighborMacs = neighborMacs,
+            resolveNeighborMac = rootExecutor::resolveNeighborMac,
+        )
         DiscoveryResult(hostAddress, hostName, openPorts, macAddress)
     }
 
@@ -89,4 +115,15 @@ class AndroidNetworkDiscovery @Inject constructor(
         const val MAX_CONCURRENT_PROBES = 32
         val COMMON_PORTS = intArrayOf(22, 80, 443, 445, 3389)
     }
+}
+
+internal fun macForDiscovery(
+    rootMode: Boolean,
+    address: String,
+    neighborMacs: Map<String, String>,
+    resolveNeighborMac: (String) -> String?,
+): String? = if (rootMode) {
+    neighborMacs[address] ?: resolveNeighborMac(address)
+} else {
+    null
 }

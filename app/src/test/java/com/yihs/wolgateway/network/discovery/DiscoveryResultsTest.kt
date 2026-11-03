@@ -9,6 +9,46 @@ import org.junit.Test
 
 class DiscoveryResultsTest {
     @Test
+    fun standardModeNeverResolvesMacThroughRootExecutor() {
+        var resolverCalls = 0
+        assertEquals(
+            null,
+            macForDiscovery(
+                rootMode = false,
+                address = "192.168.1.20",
+                neighborMacs = mapOf("192.168.1.20" to "AA:BB:CC:DD:EE:FF"),
+                resolveNeighborMac = {
+                    resolverCalls++
+                    "AA:BB:CC:DD:EE:FF"
+                },
+            ),
+        )
+        assertEquals(0, resolverCalls)
+    }
+
+    @Test
+    fun rootModeResolvesMacFromNeighborDataOrExecutor() {
+        assertEquals(
+            "AA:BB:CC:DD:EE:FF",
+            macForDiscovery(
+                rootMode = true,
+                address = "192.168.1.20",
+                neighborMacs = mapOf("192.168.1.20" to "AA:BB:CC:DD:EE:FF"),
+                resolveNeighborMac = { "11:22:33:44:55:66" },
+            ),
+        )
+        assertEquals(
+            "11:22:33:44:55:66",
+            macForDiscovery(
+                rootMode = true,
+                address = "192.168.1.21",
+                neighborMacs = emptyMap(),
+                resolveNeighborMac = { "11:22:33:44:55:66" },
+            ),
+        )
+    }
+
+    @Test
     fun savedIpIsHiddenFromDiscoveryResults() {
         val visible = DiscoveryResults.excludeSavedAddresses(
             results = listOf(DiscoveryResult("192.168.1.20"), DiscoveryResult("192.168.1.21")),

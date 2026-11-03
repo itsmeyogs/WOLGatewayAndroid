@@ -30,6 +30,7 @@ class GatewayCoordinator @Inject constructor(
     private val serviceState: GatewayServiceState,
 ) {
     private val lifecycleMutex = Mutex()
+    @Volatile private var rootModeActive = false
 
     suspend fun startFromPreferences(): Boolean = lifecycleMutex.withLock {
         val values = preferences.data.first()
@@ -39,16 +40,19 @@ class GatewayCoordinator @Inject constructor(
         val startApi = values[SERVER_ENABLED] == true || values[GatewayStartupPreferences.AUTO_START_API] == true
         val startTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
         if (!startApi && !startTunnel) {
-            rootSupervisor.stop()
+            rootModeActive = false
             return@withLock false
         }
 
         if (rootRequested) {
+            rootModeActive = rootRequested && rootConsented
             rootSupervisor.start(
                 consentGiven = rootConsented,
                 apiPort = port,
                 serviceAlreadyStarted = serviceState.running.value,
             )
+        } else {
+            rootModeActive = false
         }
 
         if (gatewayServer.state.value != ServerState.RUNNING) {
@@ -76,7 +80,7 @@ class GatewayCoordinator @Inject constructor(
                 before[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
             val port = before[API_PORT] ?: DEFAULT_API_PORT
 
-            rootSupervisor.stop()
+            if (rootModeActive) rootSupervisor.stop()
             tunnelController.disconnectAndWait()
             gatewayServer.stop()
             GatewayService.stop(context)
@@ -89,6 +93,7 @@ class GatewayCoordinator @Inject constructor(
                 it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = rootEnabled
                 it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = rootConsented
             }
+            rootModeActive = rootEnabled && rootConsented
             if (!shouldRun || !stopped) return@withLock stopped
 
             if (rootEnabled) {
@@ -120,7 +125,7 @@ class GatewayCoordinator @Inject constructor(
     }
 
     fun stop() {
-        rootSupervisor.stop()
+        if (rootModeActive) rootSupervisor.stop()
         tunnelController.disconnect()
         gatewayServer.stop()
     }

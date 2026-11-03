@@ -111,7 +111,7 @@ fun SettingsScreen(
                 SettingsLinkRow(
                     title = stringResource(R.string.settings_background),
                     description = stringResource(
-                        if (state.rootModeEnabled && state.rootConsentGiven && state.rootCapability == RootCapability.AVAILABLE) {
+                        if (state.rootModeEnabled && state.rootConsentGiven) {
                             R.string.settings_root_mode
                         } else R.string.settings_standard_mode
                     ),
@@ -156,12 +156,14 @@ fun SettingsScreen(
                     ServiceModeOption(
                         title = stringResource(R.string.settings_root_mode),
                         description = stringResource(
-                            if (state.rootCapability == RootCapability.AVAILABLE) {
-                                R.string.settings_root_mode_description
-                            } else R.string.settings_root_unavailable
+                            when (state.rootCapability) {
+                                RootCapability.AVAILABLE -> R.string.settings_root_mode_description
+                                RootCapability.UNKNOWN -> R.string.settings_root_unknown
+                                RootCapability.UNAVAILABLE -> R.string.settings_root_unavailable
+                            }
                         ),
                         selected = rootSelected,
-                        enabled = state.rootCapability == RootCapability.AVAILABLE,
+                        enabled = true,
                         onClick = { viewModel.setRootMode(true); showServiceModeDialog = false },
                     )
                 }

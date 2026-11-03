@@ -38,10 +38,14 @@ class DiagnosticsProvider @Inject constructor(
         serviceState.running,
         rootSupervisor.stateFlow,
     ) { values, apiState, tunnel, serviceRunning, supervisorState ->
-        val rootCapability = withContext(Dispatchers.IO) { rootDetector.detect() }
-        val rootMode = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
-            values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true &&
-            rootCapability == RootCapability.AVAILABLE
+        val rootRequested = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
+            values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
+        val rootCapability = if (rootRequested) {
+            withContext(Dispatchers.IO) { rootDetector.detect() }
+        } else {
+            RootCapability.UNKNOWN
+        }
+        val rootMode = rootRequested && rootCapability == RootCapability.AVAILABLE
         val apiRunning = apiState == ServerState.RUNNING
         val tunnelConfigured = tunnel.tokenConfigured
         val notification = notificationStatus(serviceRunning)
@@ -78,7 +82,7 @@ class DiagnosticsProvider @Inject constructor(
             gatewayService = item("GatewayService", serviceRunning.toRunningDisplay(), serviceRunning.status()),
             safeErrors = buildList {
                 tunnel.userMessage?.let(::add)
-                if (supervisorState.name == "FALLBACK") add("Root supervision fell back to Standard Mode")
+                if (rootRequested && supervisorState.name == "FALLBACK") add("Root supervision fell back to Standard Mode")
             }.take(MAX_ERRORS),
             mode = if (rootMode) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD,
             standard = standard,

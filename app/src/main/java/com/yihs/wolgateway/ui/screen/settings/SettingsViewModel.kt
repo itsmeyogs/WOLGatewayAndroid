@@ -13,7 +13,6 @@ import com.yihs.wolgateway.androidservice.GatewayService
 import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import com.yihs.wolgateway.androidservice.GatewayCoordinator
-import com.yihs.wolgateway.androidservice.GatewayServiceState
 import com.yihs.wolgateway.tunnel.controller.TunnelControllerError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.yihs.wolgateway.root.RootCapabilityDetector
 import com.yihs.wolgateway.root.RootCapability
@@ -33,7 +33,6 @@ class SettingsViewModel @Inject constructor(
     tunnelController: TunnelController,
     private val rootDetector: RootCapabilityDetector,
     private val coordinator: GatewayCoordinator,
-    private val serviceState: GatewayServiceState,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(SettingsUiState())
     val state = _state.asStateFlow()
@@ -41,6 +40,8 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             combine(preferences.data, tunnelController.state) { values, tunnel ->
+                val rootModeEnabled = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true
+                val rootConsentGiven = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
                 SettingsUiState(
                     autoStartApi = values[GatewayStartupPreferences.AUTO_START_API] == true,
                     autoStartTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true,
@@ -53,21 +54,20 @@ class SettingsViewModel @Inject constructor(
                     },
                     batteryOptimizationIgnored = batteryOptimizationIgnored(),
                     batteryGuidance = batteryGuidance(),
-                    rootCapability = rootDetector.detect(),
-                    rootModeEnabled = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true,
-                    rootConsentGiven = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true,
+                    rootCapability = _state.value.rootCapability,
+                    rootModeEnabled = rootModeEnabled,
+                    rootConsentGiven = rootConsentGiven,
                 )
             }.collect { nextState ->
-                if (nextState.rootModeEnabled && nextState.rootCapability != RootCapability.AVAILABLE) {
-                    preferences.edit {
-                        it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = false
-                        it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = false
-                    }
-                }
-                _state.value = nextState.copy(
-                    rootModeEnabled = nextState.rootModeEnabled && nextState.rootCapability == RootCapability.AVAILABLE,
-                    rootConsentGiven = nextState.rootConsentGiven && nextState.rootCapability == RootCapability.AVAILABLE,
-                )
+                _state.value = nextState
+            }
+        }
+        viewModelScope.launch {
+            val values = preferences.data.first()
+            if (values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
+                values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
+            ) {
+                _state.value = _state.value.copy(rootCapability = rootDetector.detect())
             }
         }
     }
@@ -119,8 +119,13 @@ class SettingsViewModel @Inject constructor(
 
     fun setRootMode(enabled: Boolean) {
         viewModelScope.launch {
-            val capability = rootDetector.detect()
-            if (enabled && capability != com.yihs.wolgateway.root.RootCapability.AVAILABLE) return@launch
+            if (enabled) {
+                val capability = rootDetector.detect()
+                _state.value = _state.value.copy(rootCapability = capability)
+                if (capability != RootCapability.AVAILABLE) return@launch
+            } else {
+                _state.value = _state.value.copy(rootCapability = RootCapability.UNKNOWN)
+            }
             coordinator.transitionMode(enabled, enabled)
         }
     }
