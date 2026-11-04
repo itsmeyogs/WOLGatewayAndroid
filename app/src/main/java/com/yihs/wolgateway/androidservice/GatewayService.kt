@@ -105,7 +105,7 @@ class GatewayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun notification(): Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setSmallIcon(R.mipmap.ic_launcher)
+        .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(getString(R.string.app_name))
         .setContentText(getString(R.string.gateway_service_notification_api))
         .setContentIntent(appPendingIntent())
@@ -124,7 +124,7 @@ class GatewayService : Service() {
             getSystemService(NotificationManager::class.java).notify(
                 NOTIFICATION_ID,
                 NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(getString(R.string.app_name))
                     .setContentText(text)
                     .setContentIntent(appPendingIntent())
