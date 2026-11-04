@@ -2,6 +2,7 @@ package com.yihs.wolgateway.gateway.auth
 
 import android.content.Context
 import android.util.Base64
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -59,9 +60,9 @@ class AndroidApiTokenStore @Inject constructor(
             init(Cipher.ENCRYPT_MODE, secretKey())
         }
         val cipherText = cipher.doFinal(token.toByteArray(StandardCharsets.UTF_8))
-        preferences.edit()
-            .putString(TOKEN_KEY, Base64.encodeToString(cipher.iv + cipherText, Base64.NO_WRAP))
-            .apply()
+        preferences.edit {
+            putString(TOKEN_KEY, Base64.encodeToString(cipher.iv + cipherText, Base64.NO_WRAP))
+        }
     }
 
     private fun secretKey(): SecretKey {

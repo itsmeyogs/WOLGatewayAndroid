@@ -79,7 +79,7 @@ fun TunnelScreen(
                     Text(statusText, style = MaterialTheme.typography.bodySmall)
                     val connectionMessage = when {
                         !state.tokenConfigured -> stringResource(R.string.tunnel_token_required)
-                        state.errorMessage != null -> state.errorMessage
+                        state.errorMessage != null -> stringResource(state.errorMessage!!)
                         state.error != null -> state.error?.let { stringResource(it) }
                         else -> null
                     }

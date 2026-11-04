@@ -135,11 +135,6 @@ class TunnelViewModel @Inject constructor(
         }
     }
 
-    private suspend fun readOrigin(): String {
-        val port = preferences.data.first()[API_PORT] ?: DEFAULT_API_PORT
-        return localApiOrigin(port)
-    }
-
     private fun isConnectionActive(): Boolean = _state.value.status == TunnelState.CONNECTING ||
         _state.value.status == TunnelState.CONNECTED ||
         _state.value.status == TunnelState.RECONNECTING

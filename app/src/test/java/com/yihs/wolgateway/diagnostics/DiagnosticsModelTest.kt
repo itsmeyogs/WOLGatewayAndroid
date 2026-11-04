@@ -30,7 +30,7 @@ class DiagnosticsModelTest {
             root = emptyList(),
         )
 
-        val output = DiagnosticsCopyFormatter.format(snapshot)
+        val output = DiagnosticsCopyFormatter.format(snapshot, labels())
         assertTrue(output.contains("Token: configured"))
         assertFalse(output.contains(secret))
         assertFalse(output.contains("uid=0"))
@@ -46,6 +46,12 @@ class DiagnosticsModelTest {
             "1.0", "14", "arm64-v8a", DeviceClassification.EMULATOR, "wlan0",
             item, item, item, emptyList(), DiagnosticsMode.STANDARD, emptyList(), emptyList(),
         )
-        assertTrue(DiagnosticsCopyFormatter.format(snapshot) == DiagnosticsCopyFormatter.format(snapshot))
+        assertTrue(DiagnosticsCopyFormatter.format(snapshot, labels()) == DiagnosticsCopyFormatter.format(snapshot, labels()))
     }
+
+    private fun labels() = DiagnosticsCopyLabels(
+        "Diagnostics", "App version", "Android", "ABI", "Device", "Network", "API", "Tunnel", "GatewayService",
+        "Root Mode", "Standard Mode", "Errors", "None", "Redacted",
+        "automatic test", "emulator", "real device",
+    )
 }

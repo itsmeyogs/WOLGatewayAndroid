@@ -20,8 +20,8 @@ import com.yihs.wolgateway.tunnel.model.TunnelState
 fun GatewayStatusStrip(
     serverState: ServerState,
     tunnelState: TunnelState,
-    rootMode: Boolean = false,
     modifier: Modifier = Modifier,
+    rootMode: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),

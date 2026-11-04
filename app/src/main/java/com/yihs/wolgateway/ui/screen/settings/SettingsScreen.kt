@@ -101,7 +101,7 @@ fun SettingsScreen(
                         )
                     } else {
                         state.tunnelErrorMessage?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                         } ?: state.tunnelError?.let {
                             Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                         }

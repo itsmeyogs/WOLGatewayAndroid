@@ -12,5 +12,5 @@ data class TunnelUiState(
     val autoReconnect: Boolean = false,
     val autoStartTunnel: Boolean = false,
     val error: Int? = null,
-    val errorMessage: String? = null,
+    val errorMessage: Int? = null,
 )

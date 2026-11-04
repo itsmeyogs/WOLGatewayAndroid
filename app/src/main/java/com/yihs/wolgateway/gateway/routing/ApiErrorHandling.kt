@@ -23,6 +23,9 @@ fun Application.configureApiErrorHandling() {
         exception<RequestRejectedException> { call, _ ->
             call.respond(HttpStatusCode.PayloadTooLarge, ApiErrorResponse(ApiError("request_too_large", "Request body is too large")))
         }
+        exception<UnauthorizedRequestException> { call, _ ->
+            call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse(ApiError("unauthorized", "Authentication required")))
+        }
         exception<ContentTransformationException> { call, _ ->
             call.respond(HttpStatusCode.BadRequest, ApiErrorResponse(ApiError("invalid_json", "Request body is invalid")))
         }

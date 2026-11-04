@@ -1,6 +1,7 @@
 package com.yihs.wolgateway.tunnel
 
 import com.yihs.wolgateway.tunnel.adapter.TunnelRuntime
+import com.yihs.wolgateway.R
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import com.yihs.wolgateway.tunnel.model.TunnelRuntimeConfig
 import com.yihs.wolgateway.tunnel.model.TunnelState
@@ -21,7 +22,7 @@ class TunnelControllerTest {
         controller.connect("127.0.0.1:8080")
         await { controller.state.value.status == TunnelState.ERROR }
 
-        assertEquals("Provided Tunnel token is not valid.", controller.state.value.userMessage)
+        assertEquals(R.string.tunnel_error_invalid_token, controller.state.value.userMessage)
     }
 
     @Test

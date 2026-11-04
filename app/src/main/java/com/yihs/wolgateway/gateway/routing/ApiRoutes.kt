@@ -25,6 +25,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
+import io.ktor.server.application.createRouteScopedPlugin
+import io.ktor.server.application.install
 import io.ktor.server.request.receive
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
@@ -34,7 +36,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.ktor.server.routing.intercept
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -57,11 +58,22 @@ fun Application.configureApiRoutes(
     networkDiscovery: NetworkDiscovery? = null,
 ) {
     val discoveryMutex = Mutex()
+    val authenticated = createRouteScopedPlugin("ApiAuthentication") {
+        onCall { call ->
+            val authorization = call.request.headers[HttpHeaders.Authorization]
+            val supplied = authorization?.removePrefix("Bearer ")
+                ?.takeIf { it != authorization }
+            val configuredToken = tokenStore.read()
+            if (supplied == null || configuredToken == null || !constantTimeEquals(supplied, configuredToken)) {
+                throw UnauthorizedRequestException()
+            }
+        }
+    }
     routing {
         get("$API_PREFIX/health") { call.respond(HealthResponse()) }
         route(API_PREFIX) {
             route("/devices") {
-                interceptAuthenticated(tokenStore)
+                install(authenticated)
                 get {
                     call.rejectOversizedRequest()
                     val devices = repository.observeDevices().first()
@@ -117,14 +129,14 @@ fun Application.configureApiRoutes(
                 }
             }
             route("/diagnostics") {
-                interceptAuthenticated(tokenStore)
+                install(authenticated)
                 get {
                     val provider = diagnosticsProvider ?: throw IllegalStateException("Diagnostics unavailable")
                     call.respond(provider.snapshot().first().toResponse())
                 }
             }
             route("/discovery") {
-                interceptAuthenticated(tokenStore)
+                install(authenticated)
                 post("/scan") {
                     val discovery = networkDiscovery ?: throw IllegalStateException("Discovery unavailable")
                     val startedAt = System.nanoTime()
@@ -147,19 +159,6 @@ fun Application.configureApiRoutes(
     }
 }
 
-private fun io.ktor.server.routing.Route.interceptAuthenticated(tokenStore: ApiTokenStore) {
-    intercept(io.ktor.server.application.ApplicationCallPipeline.Plugins) {
-        val authorization = call.request.headers[HttpHeaders.Authorization]
-        val supplied = authorization?.removePrefix("Bearer ")
-            ?.takeIf { it != authorization }
-        val configuredToken = tokenStore.read()
-        if (supplied == null || configuredToken == null || !constantTimeEquals(supplied, configuredToken)) {
-            call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse(ApiError("unauthorized", "Authentication required")))
-            finish()
-        }
-    }
-}
-
 private fun constantTimeEquals(left: String, right: String): Boolean = MessageDigest.isEqual(
     left.toByteArray(Charsets.UTF_8),
     right.toByteArray(Charsets.UTF_8),
@@ -175,6 +174,8 @@ private suspend fun io.ktor.server.application.ApplicationCall.rejectOversizedRe
 class RequestRejectedException : RuntimeException()
 
 class DiscoveryTimeoutException : RuntimeException()
+
+class UnauthorizedRequestException : RuntimeException()
 
 private fun io.ktor.server.application.ApplicationCall.deviceId(): Long = parameters["id"]?.toLongOrNull()
     ?.takeIf { it > 0 } ?: throw IllegalArgumentException("Invalid device ID")

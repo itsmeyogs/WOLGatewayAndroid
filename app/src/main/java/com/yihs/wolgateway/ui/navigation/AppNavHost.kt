@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +37,6 @@ import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelViewModel
 import com.yihs.wolgateway.ui.screen.settings.SettingsViewModel
 import com.yihs.wolgateway.ui.screen.diagnostics.DiagnosticsViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,9 +50,8 @@ fun AppNavHost() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val snackbarHostState = remember { SnackbarHostState() }
-    val snackbarScope = rememberCoroutineScope()
+    var snackbarResourceId by remember { mutableStateOf<Int?>(null) }
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
-    var pendingDeleteDeviceId by rememberSaveable { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
     val selectedDeviceId = backStackEntry?.arguments?.getLong("deviceId")
         ?.takeUnless { it == 0L || it == -1L }
@@ -76,21 +73,25 @@ fun AppNavHost() {
     }
     LaunchedEffect(Unit) {
         viewModel.events.collect { message ->
-            snackbarHostState.showSnackbar(
-                context.resources.getString(message.resourceId),
-            )
+            snackbarResourceId = message.resourceId
         }
     }
     LaunchedEffect(Unit) {
         apiSettingsViewModel.events.collect { message ->
-            snackbarHostState.showSnackbar(
-                context.resources.getString(message.resourceId),
-            )
+            snackbarResourceId = message.resourceId
         }
     }
     LaunchedEffect(Unit) {
         tunnelViewModel.events.collect { message ->
-            snackbarHostState.showSnackbar(context.resources.getString(message.resourceId))
+            snackbarResourceId = message.resourceId
+        }
+    }
+    val snackbarText = snackbarResourceId?.let { stringResource(it) }
+    val clipboardLabel = stringResource(R.string.clipboard_api_settings)
+    LaunchedEffect(snackbarText) {
+        snackbarText?.let {
+            snackbarHostState.showSnackbar(it)
+            snackbarResourceId = null
         }
     }
 
@@ -162,10 +163,8 @@ fun AppNavHost() {
             onCopyText = { text ->
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                     as android.content.ClipboardManager
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("API setting", text))
-                snackbarScope.launch {
-                    snackbarHostState.showSnackbar(context.resources.getString(R.string.event_copied_to_clipboard))
-                }
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(clipboardLabel, text))
+                snackbarResourceId = R.string.event_copied_to_clipboard
             },
             modifier = androidx.compose.ui.Modifier.padding(innerPadding),
         )
@@ -178,16 +177,14 @@ fun AppNavHost() {
             text = { Text(stringResource(R.string.dialog_delete_device_message)) },
             confirmButton = {
                 TextButton(onClick = {
-                    (pendingDeleteDeviceId ?: selectedDeviceId)?.let(viewModel::deleteDevice)
+                    selectedDeviceId?.let(viewModel::deleteDevice)
                     showDeleteConfirmation = false
-                    pendingDeleteDeviceId = null
                     if (currentRoute == Screen.Details.route) navController.navigateUp()
                 }) { Text(stringResource(R.string.action_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showDeleteConfirmation = false
-                    pendingDeleteDeviceId = null
                 }) { Text(stringResource(R.string.action_cancel)) }
             },
         )

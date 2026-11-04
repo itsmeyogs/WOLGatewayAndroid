@@ -2,12 +2,13 @@ package com.yihs.wolgateway.ui.screen.settings
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.annotation.SuppressLint
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.core.net.toUri
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.androidservice.GatewayService
 import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
@@ -72,13 +73,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    @SuppressLint("BatteryLife")
     fun requestBatteryOptimizationExemption() {
-        runCatching {
-            context.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:${context.packageName}")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
+        val directIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = "package:${context.packageName}".toUri()
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        runCatching { context.startActivity(directIntent) }
+            .onFailure {
+                runCatching {
+                    context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                }
+            }
     }
 
     fun refreshBatteryOptimizationStatus() {

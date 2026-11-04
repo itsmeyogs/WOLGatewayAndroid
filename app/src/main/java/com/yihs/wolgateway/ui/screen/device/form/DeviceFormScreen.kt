@@ -34,10 +34,10 @@ import com.yihs.wolgateway.R
 @Composable
 fun DeviceFormScreen(
     deviceId: Long?,
+    modifier: Modifier = Modifier,
     initialIpAddress: String = "",
     initialMacAddress: String = "",
     onSaved: () -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: DevicesViewModel = hiltViewModel(),
 ) {
     val existing by deviceId?.let { viewModel.observeDevice(it).collectAsStateWithLifecycle(initialValue = null) }

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.diagnostics.DiagnosticsCopyFormatter
+import com.yihs.wolgateway.diagnostics.DiagnosticsCopyLabels
 import com.yihs.wolgateway.diagnostics.DiagnosticsSnapshot
 import com.yihs.wolgateway.ui.component.DiagnosticItemRow
 
@@ -47,7 +48,13 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
             stringResource(R.string.diagnostics_app_version) to snapshot.appVersion,
             stringResource(R.string.diagnostics_android) to snapshot.androidVersion,
             stringResource(R.string.diagnostics_abi) to snapshot.abi,
-            stringResource(R.string.diagnostics_device) to snapshot.deviceClassification.name.lowercase().replace('_', ' '),
+             stringResource(R.string.diagnostics_device) to stringResource(
+                 when (snapshot.deviceClassification) {
+                     com.yihs.wolgateway.diagnostics.DeviceClassification.AUTOMATIC_TEST -> R.string.diagnostics_classification_automatic_test
+                     com.yihs.wolgateway.diagnostics.DeviceClassification.EMULATOR -> R.string.diagnostics_classification_emulator
+                     com.yihs.wolgateway.diagnostics.DeviceClassification.REAL_DEVICE -> R.string.diagnostics_classification_real_device
+                 },
+             ),
             stringResource(R.string.diagnostics_network) to snapshot.networkInterface,
         ).forEach { Text("${it.first}: ${it.second}") }
         DiagnosticItemRow(snapshot.api)
@@ -61,7 +68,26 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
     Section(if (snapshot.mode.name == "ROOT") stringResource(R.string.diagnostics_root_mode) else stringResource(R.string.diagnostics_standard_mode)) {
         (if (snapshot.mode.name == "ROOT") snapshot.root else snapshot.standard).forEach { DiagnosticItemRow(it) }
     }
-    OutlinedButton(onClick = { onCopy(DiagnosticsCopyFormatter.format(snapshot)) }, modifier = Modifier.fillMaxWidth()) {
+    val labels = DiagnosticsCopyLabels(
+        header = stringResource(R.string.diagnostics_header),
+        appVersion = stringResource(R.string.diagnostics_app_version),
+        android = stringResource(R.string.diagnostics_android),
+        abi = stringResource(R.string.diagnostics_abi),
+        device = stringResource(R.string.diagnostics_device),
+        network = stringResource(R.string.diagnostics_network),
+        api = stringResource(R.string.diagnostics_api),
+        tunnel = stringResource(R.string.diagnostics_tunnel),
+        gatewayService = stringResource(R.string.diagnostics_gateway_service),
+        rootMode = stringResource(R.string.diagnostics_root_mode),
+        standardMode = stringResource(R.string.diagnostics_standard_mode),
+        errors = stringResource(R.string.diagnostics_errors),
+        none = stringResource(R.string.diagnostics_none),
+        sensitiveRedacted = stringResource(R.string.diagnostics_redacted),
+        automaticTest = stringResource(R.string.diagnostics_classification_automatic_test),
+        emulator = stringResource(R.string.diagnostics_classification_emulator),
+        realDevice = stringResource(R.string.diagnostics_classification_real_device),
+    )
+    OutlinedButton(onClick = { onCopy(DiagnosticsCopyFormatter.format(snapshot, labels)) }, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.action_copy_diagnostics))
     }
 }

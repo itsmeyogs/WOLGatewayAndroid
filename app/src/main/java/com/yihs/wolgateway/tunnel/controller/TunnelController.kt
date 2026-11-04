@@ -2,6 +2,8 @@ package com.yihs.wolgateway.tunnel.controller
 
 import com.yihs.wolgateway.tunnel.adapter.TunnelRuntime
 import com.yihs.wolgateway.tunnel.adapter.userSafeTunnelMessage
+import com.yihs.wolgateway.tunnel.adapter.TunnelSafeMessage
+import com.yihs.wolgateway.R
 import com.yihs.wolgateway.tunnel.TunnelLog
 import com.yihs.wolgateway.tunnel.model.TunnelRuntimeConfig
 import com.yihs.wolgateway.tunnel.model.TunnelState
@@ -75,7 +77,7 @@ class TunnelController @Inject constructor(
                     _state.value = _state.value.copy(
                         status = TunnelState.ERROR,
                         error = TunnelControllerError.START_FAILED,
-                        userMessage = "Tunnel connection timed out. Check your internet connection.",
+                        userMessage = null,
                     )
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -118,7 +120,7 @@ class TunnelController @Inject constructor(
                     _state.value = _state.value.copy(
                         status = TunnelState.ERROR,
                         error = TunnelControllerError.START_FAILED,
-                        userMessage = "Tunnel connection timed out. Check your internet connection.",
+                        userMessage = null,
                     )
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -254,7 +256,7 @@ data class TunnelControllerState(
     val tokenConfigured: Boolean,
     val tokenPreview: String,
     val error: TunnelControllerError? = null,
-    val userMessage: String? = null,
+    val userMessage: Int? = null,
 )
 
 enum class TunnelControllerError {
@@ -271,6 +273,12 @@ private fun Exception.toControllerError(): TunnelControllerError =
 
 private fun Throwable.safeMessage(): String = message?.take(300) ?: javaClass.simpleName
 
-private fun Throwable.toUserMessage(): String? {
-    return userSafeTunnelMessage(message.orEmpty())
+private fun Throwable.toUserMessage(): Int? {
+    return when (userSafeTunnelMessage(message.orEmpty())) {
+        TunnelSafeMessage.INVALID_TOKEN -> R.string.tunnel_error_invalid_token
+        TunnelSafeMessage.NETWORK_UNREACHABLE -> R.string.tunnel_error_network_unreachable
+        TunnelSafeMessage.TRAFFIC_BLOCKED -> R.string.tunnel_error_traffic_blocked
+        TunnelSafeMessage.CONNECTION_FAILED -> R.string.tunnel_error_connection_failed
+        else -> null
+    }
 }

@@ -10,8 +10,10 @@ import com.yihs.wolgateway.gateway.server.ServerState
 import com.yihs.wolgateway.root.RootCapability
 import com.yihs.wolgateway.root.RootCapabilityDetector
 import com.yihs.wolgateway.root.RootSupervisor
+import com.yihs.wolgateway.root.RootSupervisorState
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import com.yihs.wolgateway.tunnel.model.TunnelState
+import com.yihs.wolgateway.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.NetworkInterface
 import javax.inject.Inject
@@ -57,39 +59,39 @@ class DiagnosticsProvider @Inject constructor(
         val tunnelConfigured = tunnel.tokenConfigured
         val notification = notificationStatus(serviceRunning)
         val standard = listOf(
-            item("Service running", serviceRunning.toRunningDisplay(), serviceRunning.status()),
-            item("Service mode", if (apiRunning && tunnel.status == TunnelState.CONNECTED) "API + tunnel" else "API only", apiRunning.status()),
-            item("Foreground service", serviceRunning.toRunningDisplay(), serviceRunning.status()),
-            item("Notifications", notification.first, notification.second.status()),
-            item("API autostart", (values[GatewayStartupPreferences.AUTO_START_API] == true).toDisplay(), DiagnosticStatus.PASS),
-            item("Tunnel autostart", (values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true).toDisplay(), if (tunnelConfigured) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
-            item("Battery optimization", batteryStatus(), batteryIgnored().status()),
-            item("Boot recovery", "best effort; OS/OEM dependent", DiagnosticStatus.WARN),
+            item(R.string.diagnostics_service_running, serviceRunning.toRunningDisplay(), serviceRunning.status()),
+            item(R.string.diagnostics_service_mode, if (apiRunning && tunnel.status == TunnelState.CONNECTED) R.string.diagnostics_api_tunnel else R.string.diagnostics_api_only, apiRunning.status()),
+            item(R.string.diagnostics_foreground_service, serviceRunning.toRunningDisplay(), serviceRunning.status()),
+            item(R.string.diagnostics_notifications, notification.first, notification.second.status()),
+            item(R.string.diagnostics_api_autostart, (values[GatewayStartupPreferences.AUTO_START_API] == true).toDisplay(), DiagnosticStatus.PASS),
+            item(R.string.diagnostics_tunnel_autostart, (values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true).toDisplay(), if (tunnelConfigured) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
+            item(R.string.diagnostics_battery_optimization, batteryStatus(), batteryIgnored().status()),
+            item(R.string.diagnostics_boot_recovery, R.string.diagnostics_best_effort_os_oem, DiagnosticStatus.WARN),
         )
         val root = listOf(
-            item("Root capability", rootCapability.displayName(), when (rootCapability) {
+            item(R.string.diagnostics_root_capability, rootCapability.displayName(), when (rootCapability) {
                 RootCapability.AVAILABLE -> DiagnosticStatus.PASS
                 RootCapability.UNAVAILABLE -> DiagnosticStatus.WARN
                 RootCapability.UNKNOWN -> DiagnosticStatus.WARN
             }),
-            item("User consent", (values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true).toDisplay(), if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
-            item("Privilege check", if (rootMode) "passed" else "not checked", if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
-            item("Supervisor", supervisorState.name.lowercase(), if (supervisorState.name == "RUNNING") DiagnosticStatus.PASS else DiagnosticStatus.WARN),
-            item("Root features", if (rootMode) "available" else "fallback to Standard Mode", if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.WARN),
-            item("Fallback", (supervisorState.name == "FALLBACK").toDisplay(), if (supervisorState.name == "FALLBACK") DiagnosticStatus.WARN else DiagnosticStatus.PASS),
+            item(R.string.diagnostics_user_consent, (values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true).toDisplay(), if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
+            item(R.string.diagnostics_privilege_check, if (rootMode) R.string.diagnostics_passed else R.string.diagnostics_not_checked, if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.NOT_CONFIGURED),
+            item(R.string.diagnostics_supervisor, supervisorState.displayName(), if (supervisorState == RootSupervisorState.RUNNING) DiagnosticStatus.PASS else DiagnosticStatus.WARN),
+            item(R.string.diagnostics_root_features, if (rootMode) R.string.diagnostics_available else R.string.diagnostics_fallback_standard, if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.WARN),
+            item(R.string.diagnostics_fallback, (supervisorState.name == "FALLBACK").toDisplay(), if (supervisorState.name == "FALLBACK") DiagnosticStatus.WARN else DiagnosticStatus.PASS),
         )
         DiagnosticsSnapshot(
-            appVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown",
+            appVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: context.getString(R.string.diagnostics_unknown),
             androidVersion = Build.VERSION.RELEASE ?: Build.VERSION.SDK_INT.toString(),
-            abi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+            abi = Build.SUPPORTED_ABIS.firstOrNull() ?: context.getString(R.string.diagnostics_unknown),
             deviceClassification = classifyDevice(Build.FINGERPRINT, Build.MODEL),
             networkInterface = activeInterface(),
-            api = item("API", if (apiRunning) "running" else "stopped", apiRunning.status()),
-            tunnel = item("Tunnel", tunnel.status.displayName(), tunnel.status.diagnosticStatus()),
-            gatewayService = item("GatewayService", serviceRunning.toRunningDisplay(), serviceRunning.status()),
+            api = item(R.string.diagnostics_api, if (apiRunning) R.string.diagnostics_running else R.string.diagnostics_stopped, apiRunning.status()),
+            tunnel = item(R.string.diagnostics_tunnel, tunnel.status.displayName(), tunnel.status.diagnosticStatus()),
+            gatewayService = item(R.string.diagnostics_gateway_service, serviceRunning.toRunningDisplay(), serviceRunning.status()),
             safeErrors = buildList {
-                tunnel.userMessage?.let(::add)
-                if (rootRequested && supervisorState.name == "FALLBACK") add("Root supervision fell back to Standard Mode")
+                tunnel.userMessage?.let { add(context.getString(it)) }
+                if (rootRequested && supervisorState.name == "FALLBACK") add(context.getString(R.string.diagnostics_root_fallback_error))
             }.take(MAX_ERRORS),
              mode = effectiveMode,
              standard = standard,
@@ -99,8 +101,14 @@ class DiagnosticsProvider @Inject constructor(
          )
     }
 
-    private fun item(label: String, value: String, status: DiagnosticStatus) = DiagnosticItem(
-        label = label,
+    private fun item(label: Int, value: Int, status: DiagnosticStatus) = DiagnosticItem(
+        label = context.getString(label),
+        value = context.getString(value),
+        status = status,
+    )
+
+    private fun item(label: Int, value: String, status: DiagnosticStatus) = DiagnosticItem(
+        label = context.getString(label),
         value = value,
         status = status,
     )
@@ -108,33 +116,47 @@ class DiagnosticsProvider @Inject constructor(
     private fun batteryIgnored(): Boolean = context.getSystemService(android.os.PowerManager::class.java)
         ?.isIgnoringBatteryOptimizations(context.packageName) == true
 
-    private fun batteryStatus(): String = if (batteryIgnored()) "exempt" else "enabled"
+    private fun batteryStatus(): String = context.getString(if (batteryIgnored()) R.string.diagnostics_exempt else R.string.diagnostics_enabled)
 
     private fun notificationStatus(running: Boolean): Pair<String, Boolean> {
-        if (!running) return "not active" to true
+        if (!running) return context.getString(R.string.diagnostics_not_active) to true
         val manager = context.getSystemService(NotificationManager::class.java)
         val enabled = Build.VERSION.SDK_INT < 33 || manager.areNotificationsEnabled()
-        return (if (enabled) "enabled" else "disabled") to enabled
+        return context.getString(if (enabled) R.string.diagnostics_enabled else R.string.diagnostics_disabled) to enabled
     }
 
     private fun activeInterface(): String = runCatching {
         NetworkInterface.getNetworkInterfaces().toList()
             .filter { it.isUp && !it.isLoopback }
             .sortedBy { if (it.name.startsWith("wlan") || it.name.startsWith("eth")) 0 else 1 }
-            .firstOrNull()?.name ?: "not detected"
-    }.getOrDefault("not detected")
+            .firstOrNull()?.name ?: context.getString(R.string.diagnostics_not_detected)
+    }.getOrDefault(context.getString(R.string.diagnostics_not_detected))
 
     private companion object {
         const val MAX_ERRORS = 5
-        fun Boolean.toDisplay() = if (this) "enabled" else "disabled"
-        fun Boolean.toRunningDisplay() = if (this) "running" else "stopped"
+        fun Boolean.toDisplay() = if (this) R.string.diagnostics_enabled else R.string.diagnostics_disabled
+        fun Boolean.toRunningDisplay() = if (this) R.string.diagnostics_running else R.string.diagnostics_stopped
         fun Boolean.status() = if (this) DiagnosticStatus.PASS else DiagnosticStatus.WARN
         fun RootCapability.displayName() = when (this) {
-            RootCapability.AVAILABLE -> "available"
-            RootCapability.UNAVAILABLE -> "unavailable"
-            RootCapability.UNKNOWN -> "unknown"
+            RootCapability.AVAILABLE -> R.string.diagnostics_available
+            RootCapability.UNAVAILABLE -> R.string.diagnostics_unavailable
+            RootCapability.UNKNOWN -> R.string.diagnostics_unknown
         }
-        fun TunnelState.displayName() = name.lowercase().replace('_', ' ')
+        fun RootSupervisorState.displayName() = when (this) {
+            RootSupervisorState.STOPPED -> R.string.diagnostics_supervisor_stopped
+            RootSupervisorState.STARTING -> R.string.diagnostics_supervisor_starting
+            RootSupervisorState.RUNNING -> R.string.diagnostics_supervisor_running
+            RootSupervisorState.RESTARTING -> R.string.diagnostics_supervisor_restarting
+            RootSupervisorState.FALLBACK -> R.string.diagnostics_supervisor_fallback
+        }
+        fun TunnelState.displayName() = when (this) {
+            TunnelState.NOT_CONFIGURED -> R.string.tunnel_status_not_configured
+            TunnelState.DISCONNECTED -> R.string.tunnel_status_disconnected
+            TunnelState.CONNECTING -> R.string.tunnel_status_connecting
+            TunnelState.CONNECTED -> R.string.tunnel_status_connected
+            TunnelState.RECONNECTING -> R.string.tunnel_status_reconnecting
+            TunnelState.ERROR -> R.string.tunnel_status_error
+        }
         fun TunnelState.diagnosticStatus() = when (this) {
             TunnelState.CONNECTED -> DiagnosticStatus.PASS
             TunnelState.ERROR -> DiagnosticStatus.FAIL

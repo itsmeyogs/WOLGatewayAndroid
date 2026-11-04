@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
@@ -42,9 +43,9 @@ class AndroidTunnelTokenStore @Inject constructor(
             init(Cipher.ENCRYPT_MODE, secretKey())
         }
         val encrypted = cipher.doFinal(token.toByteArray(StandardCharsets.UTF_8))
-        preferences.edit()
-            .putString(TOKEN_KEY, Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP))
-            .apply()
+        preferences.edit {
+            putString(TOKEN_KEY, Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP))
+        }
         token
     }
 
