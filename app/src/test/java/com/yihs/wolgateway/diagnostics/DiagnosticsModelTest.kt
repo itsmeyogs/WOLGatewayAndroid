@@ -9,7 +9,7 @@ class DiagnosticsModelTest {
     fun classifiesTestEmulatorAndRealDevice() {
         assertTrue(classifyDevice("robolectric", "test") == DeviceClassification.AUTOMATIC_TEST)
         assertTrue(classifyDevice("generic_x86_64", "sdk_gphone") == DeviceClassification.EMULATOR)
-        assertTrue(classifyDevice("google/panther/panther", "Pixel 7") == DeviceClassification.REAL_DEVICE)
+        assertTrue(classifyDevice("google/panther/panther", "Pixel 7") == DeviceClassification.OTHER)
     }
 
     @Test
@@ -19,7 +19,7 @@ class DiagnosticsModelTest {
             appVersion = "1.0",
             androidVersion = "14",
             abi = "arm64-v8a",
-            deviceClassification = DeviceClassification.REAL_DEVICE,
+             deviceClassification = DeviceClassification.OTHER,
             networkInterface = "wlan0",
             api = DiagnosticItem("API", "running", DiagnosticStatus.PASS),
             tunnel = DiagnosticItem("Tunnel", "configured", DiagnosticStatus.PASS),
@@ -51,7 +51,8 @@ class DiagnosticsModelTest {
 
     private fun labels() = DiagnosticsCopyLabels(
         "Diagnostics", "App version", "Android", "ABI", "Device", "Network", "API", "Tunnel", "GatewayService",
-        "Root Mode", "Standard Mode", "Errors", "None", "Redacted",
-        "automatic test", "emulator", "real device",
-    )
+         "Root Mode", "Standard Mode", "Errors", "None", "Redacted",
+             "automatic test", "emulator", "Manufacturer", "Model", "Product",
+         "Battery", "Battery level", "Charging", "Battery saver",
+     )
 }

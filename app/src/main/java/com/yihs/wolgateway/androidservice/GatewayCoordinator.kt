@@ -28,9 +28,9 @@ class GatewayCoordinator @Inject constructor(
     private val tunnelController: TunnelController,
     private val rootSupervisor: RootSupervisor,
     private val serviceState: GatewayServiceState,
+    private val modeState: GatewayServiceModeState,
 ) {
     private val lifecycleMutex = Mutex()
-    @Volatile private var rootModeActive = false
 
     suspend fun startFromPreferences(): Boolean = lifecycleMutex.withLock {
         val values = preferences.data.first()
@@ -40,20 +40,16 @@ class GatewayCoordinator @Inject constructor(
         val startApi = values[SERVER_ENABLED] == true || values[GatewayStartupPreferences.AUTO_START_API] == true
         val startTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
         if (!startApi && !startTunnel) {
-            rootModeActive = false
+            modeState.set(GatewayServiceMode.STANDARD)
             return@withLock false
         }
 
-        if (rootRequested) {
-            rootModeActive = rootRequested && rootConsented
-            rootSupervisor.start(
+        val rootStarted = rootRequested && rootConsented && rootSupervisor.start(
                 consentGiven = rootConsented,
                 apiPort = port,
                 serviceAlreadyStarted = serviceState.running.value,
             )
-        } else {
-            rootModeActive = false
-        }
+        modeState.set(if (rootStarted) GatewayServiceMode.ROOT else GatewayServiceMode.STANDARD)
 
         if (gatewayServer.state.value != ServerState.RUNNING) {
             gatewayServer.configure(GatewayServerConfig(port))
@@ -80,7 +76,7 @@ class GatewayCoordinator @Inject constructor(
                 before[GatewayStartupPreferences.AUTO_START_TUNNEL] == true
             val port = before[API_PORT] ?: DEFAULT_API_PORT
 
-            if (rootModeActive) rootSupervisor.stop()
+            rootSupervisor.stop()
             tunnelController.disconnectAndWait()
             gatewayServer.stop()
             GatewayService.stop(context)
@@ -93,17 +89,30 @@ class GatewayCoordinator @Inject constructor(
                 it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = rootEnabled
                 it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = rootConsented
             }
-            rootModeActive = rootEnabled && rootConsented
-            if (!shouldRun || !stopped) return@withLock stopped
+            if (!shouldRun || !stopped) {
+                modeState.set(GatewayServiceMode.STANDARD)
+                return@withLock stopped
+            }
 
             if (rootEnabled) {
-                rootSupervisor.start(
+                val started = rootSupervisor.start(
                     consentGiven = rootConsented,
                     apiPort = port,
                     serviceAlreadyStarted = false,
                 )
+                if (!started) {
+                    preferences.edit {
+                        it[GatewayStartupPreferences.ROOT_MODE_ENABLED] = false
+                        it[GatewayStartupPreferences.ROOT_MODE_CONSENTED] = false
+                    }
+                    GatewayService.start(context)
+                    modeState.set(GatewayServiceMode.STANDARD)
+                    return@withLock false
+                }
+                modeState.set(GatewayServiceMode.ROOT)
             } else {
                 GatewayService.start(context)
+                modeState.set(GatewayServiceMode.STANDARD)
             }
             true
         }
@@ -125,7 +134,8 @@ class GatewayCoordinator @Inject constructor(
     }
 
     fun stop() {
-        if (rootModeActive) rootSupervisor.stop()
+        rootSupervisor.stop()
+        modeState.set(GatewayServiceMode.STANDARD)
         tunnelController.disconnect()
         gatewayServer.stop()
     }

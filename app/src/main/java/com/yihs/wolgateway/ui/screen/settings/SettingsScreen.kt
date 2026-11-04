@@ -22,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -44,7 +45,14 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showServiceModeDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var modeTransitionStarted by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(state.serviceModeChanging, state.serviceModeError) {
+        if (modeTransitionStarted && !state.serviceModeChanging && state.serviceModeError == null) {
+            showServiceModeDialog = false
+            modeTransitionStarted = false
+        }
+    }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshBatteryOptimizationStatus()
@@ -115,7 +123,10 @@ fun SettingsScreen(
                             R.string.settings_root_mode
                         } else R.string.settings_standard_mode
                     ),
-                    onClick = { showServiceModeDialog = true },
+                    onClick = {
+                        viewModel.refreshRootCapability()
+                        showServiceModeDialog = true
+                    },
                 )
                 HorizontalDivider()
                 Column(
@@ -151,7 +162,12 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_standard_mode),
                         description = stringResource(R.string.settings_standard_mode_description),
                         selected = !rootSelected,
-                        onClick = { viewModel.setRootMode(false); showServiceModeDialog = false },
+                        onClick = {
+                            if (!state.serviceModeChanging) {
+                                modeTransitionStarted = true
+                                viewModel.setRootMode(false)
+                            }
+                        },
                     )
                     ServiceModeOption(
                         title = stringResource(R.string.settings_root_mode),
@@ -163,8 +179,13 @@ fun SettingsScreen(
                             }
                         ),
                         selected = rootSelected,
-                        enabled = true,
-                        onClick = { viewModel.setRootMode(true); showServiceModeDialog = false },
+                        enabled = state.rootCapability != RootCapability.UNAVAILABLE,
+                        onClick = {
+                            if (state.rootCapability == RootCapability.AVAILABLE && !state.serviceModeChanging) {
+                                modeTransitionStarted = true
+                                viewModel.setRootMode(true)
+                            }
+                        },
                     )
                 }
             },

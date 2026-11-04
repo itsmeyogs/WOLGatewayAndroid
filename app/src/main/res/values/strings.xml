@@ -100,6 +100,13 @@
     <string name="diagnostics_android">Android</string>
     <string name="diagnostics_abi">ABI</string>
     <string name="diagnostics_device">Device</string>
+    <string name="diagnostics_manufacturer">Manufacturer</string>
+    <string name="diagnostics_model">Model</string>
+    <string name="diagnostics_product">Product</string>
+    <string name="diagnostics_battery">Battery</string>
+    <string name="diagnostics_battery_level">Battery level</string>
+    <string name="diagnostics_charging">Charging</string>
+    <string name="diagnostics_battery_saver">Battery saver</string>
     <string name="diagnostics_network">Network</string>
     <string name="diagnostics_service_running">Service running</string>
     <string name="diagnostics_service_mode">Service mode</string>
@@ -141,7 +148,6 @@
     <string name="diagnostics_none">None</string>
     <string name="diagnostics_classification_automatic_test">automatic test</string>
     <string name="diagnostics_classification_emulator">emulator</string>
-    <string name="diagnostics_classification_real_device">real device</string>
     <string name="diagnostics_status_pass">pass</string>
     <string name="diagnostics_status_warn">warn</string>
     <string name="diagnostics_status_fail">fail</string>

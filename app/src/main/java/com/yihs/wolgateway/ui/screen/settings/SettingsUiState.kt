@@ -13,4 +13,6 @@ data class SettingsUiState(
     val rootCapability: RootCapability = RootCapability.UNKNOWN,
     val rootModeEnabled: Boolean = false,
     val rootConsentGiven: Boolean = false,
+    val serviceModeChanging: Boolean = false,
+    val serviceModeError: Int? = null,
 )

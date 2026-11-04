@@ -48,15 +48,23 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
             stringResource(R.string.diagnostics_app_version) to snapshot.appVersion,
             stringResource(R.string.diagnostics_android) to snapshot.androidVersion,
             stringResource(R.string.diagnostics_abi) to snapshot.abi,
-             stringResource(R.string.diagnostics_device) to stringResource(
-                 when (snapshot.deviceClassification) {
-                     com.yihs.wolgateway.diagnostics.DeviceClassification.AUTOMATIC_TEST -> R.string.diagnostics_classification_automatic_test
-                     com.yihs.wolgateway.diagnostics.DeviceClassification.EMULATOR -> R.string.diagnostics_classification_emulator
-                     com.yihs.wolgateway.diagnostics.DeviceClassification.REAL_DEVICE -> R.string.diagnostics_classification_real_device
-                 },
-             ),
+             stringResource(R.string.diagnostics_device) to snapshot.deviceClassification?.let {
+                 stringResource(
+                 when (it) {
+                      com.yihs.wolgateway.diagnostics.DeviceClassification.AUTOMATIC_TEST -> R.string.diagnostics_classification_automatic_test
+                      com.yihs.wolgateway.diagnostics.DeviceClassification.EMULATOR -> R.string.diagnostics_classification_emulator
+                      com.yihs.wolgateway.diagnostics.DeviceClassification.OTHER -> R.string.diagnostics_device
+                  },
+               )
+             },
+            stringResource(R.string.diagnostics_manufacturer) to snapshot.deviceInfo.manufacturer,
+            stringResource(R.string.diagnostics_model) to snapshot.deviceInfo.model,
+            stringResource(R.string.diagnostics_product) to snapshot.deviceInfo.product,
             stringResource(R.string.diagnostics_network) to snapshot.networkInterface,
         ).forEach { Text("${it.first}: ${it.second}") }
+        Text("${stringResource(R.string.diagnostics_battery_level)}: ${snapshot.batteryInfo.levelPercent?.let { "$it%" } ?: stringResource(R.string.diagnostics_unknown)}")
+        Text("${stringResource(R.string.diagnostics_charging)}: ${snapshot.batteryInfo.charging ?: stringResource(R.string.diagnostics_unknown)}")
+        Text("${stringResource(R.string.diagnostics_battery_saver)}: ${snapshot.batteryInfo.batterySaver ?: stringResource(R.string.diagnostics_unknown)}")
         DiagnosticItemRow(snapshot.api)
         DiagnosticItemRow(snapshot.tunnel)
         DiagnosticItemRow(snapshot.gatewayService)
@@ -83,9 +91,15 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
         errors = stringResource(R.string.diagnostics_errors),
         none = stringResource(R.string.diagnostics_none),
         sensitiveRedacted = stringResource(R.string.diagnostics_redacted),
-        automaticTest = stringResource(R.string.diagnostics_classification_automatic_test),
-        emulator = stringResource(R.string.diagnostics_classification_emulator),
-        realDevice = stringResource(R.string.diagnostics_classification_real_device),
+         automaticTest = stringResource(R.string.diagnostics_classification_automatic_test),
+         emulator = stringResource(R.string.diagnostics_classification_emulator),
+         manufacturer = stringResource(R.string.diagnostics_manufacturer),
+         model = stringResource(R.string.diagnostics_model),
+         product = stringResource(R.string.diagnostics_product),
+         battery = stringResource(R.string.diagnostics_battery),
+         batteryLevel = stringResource(R.string.diagnostics_battery_level),
+         charging = stringResource(R.string.diagnostics_charging),
+         batterySaver = stringResource(R.string.diagnostics_battery_saver),
     )
     OutlinedButton(onClick = { onCopy(DiagnosticsCopyFormatter.format(snapshot, labels)) }, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.action_copy_diagnostics))

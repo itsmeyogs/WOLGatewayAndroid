@@ -31,6 +31,25 @@ Full paths include the base path. For example, the health URL is `/api/v1/health
 
 `GET /api/v1/diagnostics` returns a redacted, read-only gateway snapshot. It includes application/runtime facts, API/tunnel/service state, safe errors, and selected/effective service mode. It never returns tokens, credentials, raw shell output, commands, or sensitive paths.
 
+The diagnostics response also includes safe device and battery facts:
+
+```json
+{
+  "device": {
+    "manufacturer": "Google",
+    "model": "Pixel 7",
+    "product": "panther"
+  },
+  "battery": {
+    "levelPercent": 82,
+    "charging": true,
+    "batterySaver": false
+  }
+}
+```
+
+Battery fields are nullable when Android cannot provide a value. Serial numbers, Android IDs, IMEI, credentials, and other sensitive identifiers are excluded.
+
 `POST /api/v1/discovery/scan` waits for the Android LAN scan to finish, up to the discovery timeout, then returns the final result. An empty `devices` array is valid. The scan does not persist devices; use `POST /api/v1/devices` after selecting a result. Discovery follows the effective runtime mode: Standard Mode uses the regular scan, while active Root Mode may resolve neighbor MAC addresses. Root fallback does not execute root commands from the API route.
 
 ### Expected status codes

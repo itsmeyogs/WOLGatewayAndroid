@@ -90,6 +90,8 @@ Mengambil snapshot diagnostics gateway untuk monitoring dan troubleshooting. End
 
 Response `200` berisi versi aplikasi, Android/ABI, interface aktif, API, tunnel, `GatewayService`, safe errors, serta `selectedMode` dan `effectiveMode`.
 
+Response juga memuat `device` (`manufacturer`, `model`, `product`) dan `battery` (`levelPercent`, `charging`, `batterySaver`). Field baterai dapat bernilai `null` bila tidak tersedia. Identifier sensitif seperti serial number, Android ID, dan IMEI tidak dikembalikan.
+
 Contoh:
 
 ```bash

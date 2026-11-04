@@ -21,9 +21,12 @@ import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.yihs.wolgateway.root.RootCapabilityDetector
 import com.yihs.wolgateway.root.RootCapability
 
@@ -36,11 +39,13 @@ class SettingsViewModel @Inject constructor(
     private val coordinator: GatewayCoordinator,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(SettingsUiState())
+    private val rootCapability = MutableStateFlow(RootCapability.UNKNOWN)
     val state = _state.asStateFlow()
 
     init {
+        refreshRootCapability()
         viewModelScope.launch {
-            combine(preferences.data, tunnelController.state) { values, tunnel ->
+            combine(preferences.data, tunnelController.state, rootCapability) { values, tunnel, capability ->
                 val rootModeEnabled = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true
                 val rootConsentGiven = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
                 SettingsUiState(
@@ -55,20 +60,12 @@ class SettingsViewModel @Inject constructor(
                     },
                     batteryOptimizationIgnored = batteryOptimizationIgnored(),
                     batteryGuidance = batteryGuidance(),
-                    rootCapability = _state.value.rootCapability,
+                    rootCapability = capability,
                     rootModeEnabled = rootModeEnabled,
                     rootConsentGiven = rootConsentGiven,
                 )
             }.collect { nextState ->
                 _state.value = nextState
-            }
-        }
-        viewModelScope.launch {
-            val values = preferences.data.first()
-            if (values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
-                values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
-            ) {
-                _state.value = _state.value.copy(rootCapability = rootDetector.detect())
             }
         }
     }
@@ -91,6 +88,14 @@ class SettingsViewModel @Inject constructor(
 
     fun refreshBatteryOptimizationStatus() {
         _state.value = _state.value.copy(batteryOptimizationIgnored = batteryOptimizationIgnored())
+    }
+
+    fun refreshRootCapability() {
+        viewModelScope.launch {
+            val capability = withContext(Dispatchers.IO) { rootDetector.detect() }
+            rootCapability.value = capability
+            _state.value = _state.value.copy(rootCapability = capability)
+        }
     }
 
     private fun batteryOptimizationIgnored(): Boolean =
@@ -128,13 +133,21 @@ class SettingsViewModel @Inject constructor(
     fun setRootMode(enabled: Boolean) {
         viewModelScope.launch {
             if (enabled) {
-                val capability = rootDetector.detect()
+                val capability = withContext(Dispatchers.IO) { rootDetector.detect() }
+                rootCapability.value = capability
                 _state.value = _state.value.copy(rootCapability = capability)
                 if (capability != RootCapability.AVAILABLE) return@launch
             } else {
                 _state.value = _state.value.copy(rootCapability = RootCapability.UNKNOWN)
             }
-            coordinator.transitionMode(enabled, enabled)
+            _state.value = _state.value.copy(serviceModeChanging = true, serviceModeError = null)
+            val transitioned = runCatching {
+                withContext(Dispatchers.IO) { coordinator.transitionMode(enabled, enabled) }
+            }.getOrDefault(false)
+            _state.value = _state.value.copy(
+                serviceModeChanging = false,
+                serviceModeError = if (transitioned) null else R.string.event_api_server_failed,
+            )
         }
     }
 }

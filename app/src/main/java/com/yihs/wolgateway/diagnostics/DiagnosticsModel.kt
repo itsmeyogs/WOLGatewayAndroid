@@ -2,7 +2,7 @@ package com.yihs.wolgateway.diagnostics
 
 enum class DiagnosticStatus { PASS, WARN, FAIL, NOT_CONFIGURED }
 
-enum class DeviceClassification { AUTOMATIC_TEST, EMULATOR, REAL_DEVICE }
+enum class DeviceClassification { AUTOMATIC_TEST, EMULATOR, OTHER }
 
 enum class DiagnosticsMode { STANDARD, ROOT }
 
@@ -12,11 +12,23 @@ data class DiagnosticItem(
     val status: DiagnosticStatus,
 )
 
+data class DiagnosticsDeviceInfo(
+    val manufacturer: String,
+    val model: String,
+    val product: String,
+)
+
+data class DiagnosticsBatteryInfo(
+    val levelPercent: Int?,
+    val charging: Boolean?,
+    val batterySaver: Boolean?,
+)
+
 data class DiagnosticsSnapshot(
     val appVersion: String,
     val androidVersion: String,
     val abi: String,
-    val deviceClassification: DeviceClassification,
+    val deviceClassification: DeviceClassification?,
     val networkInterface: String,
     val api: DiagnosticItem,
     val tunnel: DiagnosticItem,
@@ -27,6 +39,8 @@ data class DiagnosticsSnapshot(
     val root: List<DiagnosticItem>,
     val selectedMode: DiagnosticsMode = mode,
     val effectiveMode: DiagnosticsMode = mode,
+    val deviceInfo: DiagnosticsDeviceInfo = DiagnosticsDeviceInfo("unknown", "unknown", "unknown"),
+    val batteryInfo: DiagnosticsBatteryInfo = DiagnosticsBatteryInfo(null, null, null),
 )
 
 data class DiagnosticsCopyLabels(
@@ -46,7 +60,13 @@ data class DiagnosticsCopyLabels(
     val sensitiveRedacted: String,
     val automaticTest: String,
     val emulator: String,
-    val realDevice: String,
+    val manufacturer: String,
+    val model: String,
+    val product: String,
+    val battery: String,
+    val batteryLevel: String,
+    val charging: String,
+    val batterySaver: String,
 )
 
 object DiagnosticsCopyFormatter {
@@ -55,8 +75,12 @@ object DiagnosticsCopyFormatter {
         appendLine("${labels.appVersion}: ${snapshot.appVersion}")
         appendLine("${labels.android}: ${snapshot.androidVersion}")
         appendLine("${labels.abi}: ${snapshot.abi}")
-        appendLine("${labels.device}: ${snapshot.deviceClassification.displayName(labels)}")
+        snapshot.deviceClassification?.let { appendLine("${labels.device}: ${it.displayName(labels)}") }
+        appendLine("${labels.manufacturer}: ${snapshot.deviceInfo.manufacturer}")
+        appendLine("${labels.model}: ${snapshot.deviceInfo.model}")
+        appendLine("${labels.product}: ${snapshot.deviceInfo.product}")
         appendLine("${labels.network}: ${snapshot.networkInterface}")
+        appendLine("${labels.battery}: ${labels.batteryLevel}=${snapshot.batteryInfo.levelPercent ?: "unknown"}, ${labels.charging}=${snapshot.batteryInfo.charging ?: "unknown"}, ${labels.batterySaver}=${snapshot.batteryInfo.batterySaver ?: "unknown"}")
         appendLine("${labels.api}: ${snapshot.api.value}")
         appendLine("${labels.tunnel}: ${snapshot.tunnel.value}")
         appendLine("${labels.gatewayService}: ${snapshot.gatewayService.value}")
@@ -83,7 +107,7 @@ object DiagnosticsCopyFormatter {
     private fun DeviceClassification.displayName(labels: DiagnosticsCopyLabels): String = when (this) {
         DeviceClassification.AUTOMATIC_TEST -> labels.automaticTest
         DeviceClassification.EMULATOR -> labels.emulator
-        DeviceClassification.REAL_DEVICE -> labels.realDevice
+        DeviceClassification.OTHER -> labels.device
     }
 }
 
@@ -95,5 +119,5 @@ fun classifyDevice(fingerprint: String, model: String): DeviceClassification = w
         fingerprint.contains("emulator", ignoreCase = true) ||
         model.contains("emulator", ignoreCase = true) ||
         model.contains("sdk", ignoreCase = true) -> DeviceClassification.EMULATOR
-    else -> DeviceClassification.REAL_DEVICE
+    else -> DeviceClassification.OTHER
 }
