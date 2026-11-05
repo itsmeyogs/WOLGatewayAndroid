@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.tunnel.model.TunnelState
@@ -58,8 +59,8 @@ fun TunnelScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -143,7 +144,7 @@ fun TunnelScreen(
                         }
                     } else {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(state.tokenPreview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            Text(state.tokenPreview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace))
                             if (!connectionChecked) IconButton(onClick = viewModel::editToken) {
                                 Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_token))
                             }

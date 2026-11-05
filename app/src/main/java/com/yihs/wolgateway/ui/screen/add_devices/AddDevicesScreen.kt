@@ -155,8 +155,8 @@ private fun ScanResultRow(result: DiscoveryResult, onRegister: () -> Unit) {
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.medium,
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(result.address, style = MaterialTheme.typography.bodyLarge)
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(result.address, style = MaterialTheme.typography.titleMedium)
             Text(
                 result.macAddress ?: stringResource(R.string.add_devices_mac_unavailable),
                 style = MaterialTheme.typography.bodySmall,

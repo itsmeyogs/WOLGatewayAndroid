@@ -12,28 +12,38 @@ import androidx.compose.ui.unit.dp
 
 private val darkColorScheme = darkColorScheme(
     primary = cyan300,
-    secondary = slate700,
-    tertiary = cyan300,
+    onPrimary = navy900,
+    secondary = blue500,
+    tertiary = orange500,
     background = navy900,
     surface = navy900,
     surfaceContainer = navy800,
-    surfaceContainerHigh = Color(0xFF1D354D),
-    onPrimary = navy900,
-    onBackground = surfaceLight,
-    onSurface = surfaceLight,
+    surfaceContainerHigh = navy700,
+    surfaceContainerHighest = Color(0xFF17436F),
+    onBackground = iceWhite,
+    onSurface = iceWhite,
+    onSurfaceVariant = slate300,
+    outline = Color(0xFF25486D),
+    error = rustStatus,
+    onError = navy900,
 )
 
 private val lightColorScheme = lightColorScheme(
-    primary = cyan700,
+    primary = blue500,
+    onPrimary = Color.White,
     secondary = slate700,
-    tertiary = cyan700,
+    tertiary = orange500,
     background = surfaceLight,
     surface = surfaceLight,
     surfaceContainer = surfaceRaisedLight,
-    surfaceContainerHigh = Color(0xFFEAF0F3),
-    onPrimary = surfaceLight,
+    surfaceContainerHigh = surfaceElevatedLight,
+    surfaceContainerHighest = Color(0xFFD8EAF9),
     onBackground = ink900,
     onSurface = ink900,
+    onSurfaceVariant = slate700,
+    outline = Color(0xFFC5D8EA),
+    error = rustStatus,
+    onError = Color.White,
 )
 
 @Composable
@@ -53,7 +63,7 @@ fun WOLGatewayTheme(
 }
 
 private val appShapes = Shapes(
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(14.dp),
-    large = RoundedCornerShape(20.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
 )

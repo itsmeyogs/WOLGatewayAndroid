@@ -27,6 +27,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import com.yihs.wolgateway.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,14 +84,20 @@ fun DevicesScreen(
 
     Column(
         modifier = modifier.fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+            Text(
+                text = stringResource(R.string.devices_network_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
             GatewayStatusStrip(
                 serverState = gatewayState,
                 tunnelState = tunnelState.status,
                 rootMode = settingsState.rootModeEnabled &&
                     settingsState.rootConsentGiven,
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = 2.dp),
             )
             DeviceSearchBar(query, viewModel::setSearchQuery)
             if (devices.isEmpty()) {

@@ -5,6 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.SettingsSuggest
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,11 +31,11 @@ fun GatewayStatusStrip(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.medium,
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.gateway_state), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.gateway_state), style = MaterialTheme.typography.titleMedium)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 GatewayStatus(
                     stringResource(R.string.gateway_api),
@@ -62,8 +68,14 @@ private fun tunnelStatusResource(state: TunnelState): Int = when (state) {
 
 @Composable
 private fun GatewayStatus(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    val icon = when (label) {
+        stringResource(R.string.gateway_api) -> Icons.Filled.Dns
+        stringResource(R.string.gateway_tunnel) -> Icons.Filled.Cloud
+        else -> Icons.Filled.SettingsSuggest
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.labelLarge)
     }
 }

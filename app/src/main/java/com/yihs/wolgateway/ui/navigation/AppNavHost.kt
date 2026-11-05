@@ -31,6 +31,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
@@ -96,11 +97,12 @@ fun AppNavHost() {
     }
 
     Scaffold(
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(title) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                    containerColor = Color.Transparent,
                     titleContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                     navigationIconContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
@@ -143,7 +145,11 @@ fun AppNavHost() {
         },
         floatingActionButton = {
             if (currentRoute == Screen.Devices.route) {
-                FloatingActionButton(onClick = { navController.navigate(Screen.AddDevices.route) }) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(Screen.AddDevices.route) },
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_add_device))
                 }
             }

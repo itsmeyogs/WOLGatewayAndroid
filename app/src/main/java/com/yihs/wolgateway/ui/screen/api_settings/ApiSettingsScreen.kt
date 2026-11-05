@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.gateway.server.ServerState
@@ -57,8 +58,8 @@ fun ApiSettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 48.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 48.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -180,7 +181,7 @@ private fun UrlRow(url: String, onCopy: () -> Unit, onEdit: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(url, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        Text(url, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace))
         IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_url)) }
         IconButton(onClick = onEdit) {
             Icon(Icons.Filled.Edit, stringResource(R.string.action_edit_api_port))
@@ -202,7 +203,7 @@ private fun TokenRow(preview: String, onCopy: () -> Unit, onEdit: (() -> Unit)?,
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(preview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        Text(preview, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace))
         IconButton(onClick = onCopy) {
             Icon(Icons.Filled.ContentCopy, stringResource(R.string.action_copy_token))
         }

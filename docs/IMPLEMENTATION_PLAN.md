@@ -1,7 +1,7 @@
 # Implementation Plan — WoL Gateway
 
-**Status:** Checkpoint-gated plan; API Settings port/loopback hardening implemented
-**Tanggal:** 2026-10-26
+**Status:** UI icon-theme redesign implemented and verified on connected device
+**Tanggal:** 2026-11-04
 **Rule:** satu checkpoint aktif; berhenti setelah report; commit hanya setelah pengguna menyatakan `passed`.
 
 ## 1. Repository baseline
@@ -13,6 +13,8 @@
 - compile/target SDK `37`, min SDK `29` (Android 10).
 - Existing dependency set lacks Hilt, KSP, Ktor, Room, DataStore, and secure storage.
 - Existing staged/unstaged `.idea` changes are user work and out of scope.
+- UI redesign preserves existing Compose architecture, ViewModel contracts, routes, and protected non-UI layers.
+- Device verification completed on Sharp `SHV42` / Android 10: APK launch, connected instrumentation, route smoke navigation, dark mode, font scale `1.3`, and landscape captures passed.
 
 ## 2. Version policy
 

@@ -1,13 +1,13 @@
 # UI/UX Design — WoL Gateway
 
-**Status:** Approved specification — CP3 UI and CP7 tunnel page/runtime implemented and validated; CP4/CP5 behavior remains deferred
-**Tanggal:** 2026-10-26
+**Status:** Implemented icon-theme redesign; functionality-preserving UI checkpoint
+**Tanggal:** 2026-11-04
 
 ## 1. Design direction
 
 ### Tone
 
-Industrial network console: tenang, padat informasi, utilitarian, bukan dekorasi dashboard. Fokus visual pada “apa yang dapat dijalankan sekarang” dan “bukti status apa yang tersedia”.
+Premium network console: precise, calm, high-contrast, technical. The icon supplies the identity: dark navy depth, electric cyan actions, bright blue secondary emphasis, ice-white content, and selective orange attention.
 
 ### Principles
 
@@ -18,6 +18,27 @@ Industrial network console: tenang, padat informasi, utilitarian, bukan dekorasi
 - Hindari gradient ungu, layout centered-only, dan rounded card berlebihan.
 - Material 3 digunakan sebagai komponen dasar; token aplikasi mengatur karakter visual.
 - Compose screen tidak memuat business logic.
+- Surfaces carry hierarchy through tonal steps; shadows are reserved for floating or modal UI.
+- Technical identifiers use monospace selectively; ordinary product copy stays in the platform sans-serif.
+
+### Icon-derived palette
+
+| Role | HEX | Usage |
+|---|---|---|
+| Dark Navy | `#06152F` | Dark background, dark ink |
+| Deep Blue | `#0B2445` | Dark surface |
+| Elevated Blue | `#10345B` | Dark raised surface |
+| Electric Cyan | `#00C8F5` | Dark primary action |
+| Bright Blue | `#078BF0` | Light primary action |
+| Ice White | `#F4F8FF` | Dark foreground |
+| Orange | `#FF941F` | Selective attention |
+| Light Background | `#F3F8FF` | Light screen background |
+| Light Raised | `#FFFFFF` | Light surface |
+| Light Elevated | `#E8F3FF` | Light raised surface |
+
+### Semantic status colors
+
+`statusPositive` / `tealStatus` = `#35B89A`; `statusCaution` / `amberStatus` = `#FFB547`; `statusNegative` / `rustStatus` = `#E2685B`; `statusNeutral` / `slateStatus` = `#8EA5BF`. Status always combines color with text and an icon.
 
 ## 2. Navigation map
 
@@ -122,11 +143,11 @@ Light and dark themes must define these semantic roles rather than hardcoding st
 | `surfaceRaised` | elevated operational block |
 | `accentAction` | Wake/save/connect primary action |
 
-Suggested palette: warm graphite/navy surfaces, off-white primary text, restrained amber action accent, desaturated teal positive, rust negative, slate unknown. Exact Material 3 light/dark values are finalized during CP3 after contrast verification.
+Dark mapping uses `#06152F` background, `#0B2445` surfaces, `#10345B` raised surfaces, `#00C8F5` primary, `#078BF0` secondary, `#FF941F` tertiary, and `#F4F8FF` foreground. Light mapping uses `#F3F8FF` background, `#FFFFFF` surfaces, `#E8F3FF` raised surfaces, `#078BF0` primary, `#536A84` secondary, `#FF941F` tertiary, and `#06152F` ink.
 
 ### Typography
 
-Use the project’s Material 3 typography with a distinct display treatment for screen titles only if bundled/licensed font availability is confirmed. No new font dependency by default. Body text prioritizes readability and font scaling.
+Material 3 uses the Android platform sans-serif; no font dependency was added. Screen titles use bold hierarchy. Body text remains readable at 16sp/24sp. `bodySmall` supports metadata at 13sp/18sp. `labelLarge` is bold for actions and status labels. `FontFamily.Monospace` is limited to IP addresses, MAC addresses, URLs, ports, tokens, and diagnostic values.
 
 ### Spacing
 
@@ -142,6 +163,15 @@ Base 4 dp scale: 4, 8, 12, 16, 24, 32. Dense metadata may use 8–12 dp; screen 
 ### Elevation
 
 Use surface tonal elevation first. Shadows only for floating actions/dialogs; no identical shadow on every card.
+
+### Component standards
+
+- Filled buttons use the theme primary color; secondary actions use outlined or tonal buttons.
+- Inputs use Material 3 outlined fields with inline validation and supporting copy.
+- Operational surfaces use the medium application shape; list rows use small/medium shapes consistently.
+- Status indicators expose accessible text and icon; color alone is insufficient.
+- Icon buttons retain Material minimum touch targets and content descriptions.
+- Search, empty, loading, error, and diagnostic states reuse existing shared components.
 
 ## 5. Reusable components
 
@@ -234,6 +264,18 @@ API server, tunnel, target device, and background service each get separate labe
 - Reuse tokens/components; no screen-local duplicated status colors.
 - No network/database calls in Composable bodies.
 - UI test tags only where semantic selectors are insufficient.
+
+## 9. Guidelines for Adding New UI Features
+
+1. Read `docs/DESIGN.md` before implementing any new UI feature.
+2. Reuse centralized colors, typography, spacing, shape, and status tokens.
+3. Reuse existing shared components whenever the interaction or state already exists.
+4. Preserve the single-Scaffold ownership model and existing navigation architecture.
+5. Maintain both dark and light themes; never hardcode theme-specific colors in a screen.
+6. Maintain 48dp minimum touch targets, content descriptions, readable contrast, font scaling, and scroll-safe layouts.
+7. Never introduce arbitrary colors, gradients, decorative glows, or inconsistent component radii.
+8. Keep user-facing text in `strings.xml`; keep network, database, and business logic outside composables.
+9. Update this document when adding a reusable pattern or changing the design system.
 
 ## 9. Text wireframe
 

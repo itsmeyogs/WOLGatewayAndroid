@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.diagnostics.DiagnosticsCopyFormatter
@@ -61,10 +62,10 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
             stringResource(R.string.diagnostics_model) to snapshot.deviceInfo.model,
             stringResource(R.string.diagnostics_product) to snapshot.deviceInfo.product,
             stringResource(R.string.diagnostics_network) to snapshot.networkInterface,
-        ).forEach { Text("${it.first}: ${it.second}") }
-        Text("${stringResource(R.string.diagnostics_battery_level)}: ${snapshot.batteryInfo.levelPercent?.let { "$it%" } ?: stringResource(R.string.diagnostics_unknown)}")
-        Text("${stringResource(R.string.diagnostics_charging)}: ${snapshot.batteryInfo.charging ?: stringResource(R.string.diagnostics_unknown)}")
-        Text("${stringResource(R.string.diagnostics_battery_saver)}: ${snapshot.batteryInfo.batterySaver ?: stringResource(R.string.diagnostics_unknown)}")
+         ).forEach { Text("${it.first}: ${it.second}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) }
+         Text("${stringResource(R.string.diagnostics_battery_level)}: ${snapshot.batteryInfo.levelPercent?.let { "$it%" } ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+         Text("${stringResource(R.string.diagnostics_charging)}: ${snapshot.batteryInfo.charging ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+         Text("${stringResource(R.string.diagnostics_battery_saver)}: ${snapshot.batteryInfo.batterySaver ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
         DiagnosticItemRow(snapshot.api)
         DiagnosticItemRow(snapshot.tunnel)
         DiagnosticItemRow(snapshot.gatewayService)

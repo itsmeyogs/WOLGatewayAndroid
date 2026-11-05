@@ -194,6 +194,7 @@
     <string name="status_unknown">UNKNOWN</string>
     <string name="devices_empty_title">No devices registered</string>
     <string name="devices_empty_message">Add a PC manually, then configure its network details.</string>
+    <string name="devices_network_summary">Your network, at a glance</string>
     <string name="devices_no_match_title">No matching devices</string>
     <string name="devices_no_match_message">Try another name, IP address, or MAC address.</string>
 

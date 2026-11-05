@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.yihs.wolgateway.R
@@ -66,7 +67,7 @@ private fun DeviceDetailsContent(
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = MaterialTheme.shapes.medium,
         ) {
             Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -89,10 +90,10 @@ private fun DeviceDetailsContent(
                     DeviceStatusIndicator(device.status)
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(device.ipAddress, style = MaterialTheme.typography.bodyLarge)
+                Text(device.ipAddress, style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace))
                 Text(
                     device.macAddress,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -171,6 +172,9 @@ private fun DetailLine(label: String, value: String) {
             value,
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.End,
+            style = if (value.any(Char::isDigit) || value.contains(".")) {
+                MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+            } else MaterialTheme.typography.bodyMedium,
         )
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,7 +72,12 @@ fun DeviceFormScreen(
             )
             FormField(stringResource(R.string.form_field_broadcast_address), broadcast, { broadcast = it.filter { char -> char.isDigit() || char == '.' }.take(15) }, errors[DeviceField.BROADCAST_ADDRESS], KeyboardType.Decimal)
             FormField(stringResource(R.string.form_field_wol_port), wolPort, { wolPort = it.filter(Char::isDigit).take(5) }, errors[DeviceField.WOL_PORT], KeyboardType.Number)
-            Text(stringResource(R.string.form_status_check_help))
+            Text(
+                stringResource(R.string.form_status_check_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Button(
                     enabled = !saving,
