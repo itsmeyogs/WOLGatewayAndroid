@@ -29,6 +29,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.yihs.wolgateway.root.RootCapabilityDetector
 import com.yihs.wolgateway.root.RootCapability
+import com.yihs.wolgateway.androidservice.GatewayServiceMode
+import com.yihs.wolgateway.androidservice.GatewayServiceModeState
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -37,6 +39,7 @@ class SettingsViewModel @Inject constructor(
     tunnelController: TunnelController,
     private val rootDetector: RootCapabilityDetector,
     private val coordinator: GatewayCoordinator,
+    private val modeState: GatewayServiceModeState,
 ) : ViewModel() {
     private val _state = kotlinx.coroutines.flow.MutableStateFlow(SettingsUiState())
     private val rootCapability = MutableStateFlow(RootCapability.UNKNOWN)
@@ -48,6 +51,10 @@ class SettingsViewModel @Inject constructor(
             combine(preferences.data, tunnelController.state, rootCapability) { values, tunnel, capability ->
                 val rootModeEnabled = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true
                 val rootConsentGiven = values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
+                modeState.set(
+                    if (rootModeEnabled && rootConsentGiven && capability == RootCapability.AVAILABLE) GatewayServiceMode.ROOT
+                    else GatewayServiceMode.STANDARD,
+                )
                 SettingsUiState(
                     autoStartApi = values[GatewayStartupPreferences.AUTO_START_API] == true,
                     autoStartTunnel = values[GatewayStartupPreferences.AUTO_START_TUNNEL] == true,
@@ -113,9 +120,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferences.edit {
                 it[GatewayStartupPreferences.AUTO_START_API] = enabled
-                if (!enabled) it[GatewayStartupPreferences.AUTO_START_TUNNEL] = false
             }
-            if (enabled) GatewayService.start(context)
+            if (enabled) GatewayService.ensure(context)
         }
     }
 
@@ -126,7 +132,7 @@ class SettingsViewModel @Inject constructor(
                 it[GatewayStartupPreferences.AUTO_START_TUNNEL] = enabled
                 if (enabled) it[GatewayStartupPreferences.AUTO_START_API] = true
             }
-            if (enabled) GatewayService.start(context)
+            if (enabled) GatewayService.ensure(context)
         }
     }
 

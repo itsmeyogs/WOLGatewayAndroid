@@ -1,6 +1,9 @@
 package com.yihs.wolgateway.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.snap
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -36,15 +39,28 @@ fun NavGraph(
     onCopyText: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    fun navigateOnce(route: String) {
+        navController.navigate(route) {
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier,
+        enterTransition = { fadeIn(animationSpec = snap()) },
+        exitTransition = { fadeOut(animationSpec = snap()) },
+        popEnterTransition = { fadeIn(animationSpec = snap()) },
+        popExitTransition = { fadeOut(animationSpec = snap()) },
+        predictivePopEnterTransition = { fadeIn(animationSpec = snap()) },
+        predictivePopExitTransition = { fadeOut(animationSpec = snap()) },
+        sizeTransform = { null },
     ) {
         composable(Screen.Devices.route) {
             DevicesScreen(
-                onAdd = { navController.navigate(Screen.AddDevices.route) },
-                onOpenDevice = { navController.navigate(Screen.Details.createRoute(it)) },
+                onAdd = { navigateOnce(Screen.AddDevices.route) },
+                onOpenDevice = { navigateOnce(Screen.Details.createRoute(it)) },
                 onWake = onWake,
                 viewModel = devicesViewModel,
                 settingsViewModel = settingsViewModel,
@@ -52,17 +68,17 @@ fun NavGraph(
         }
         composable(Screen.AddDevices.route) {
             AddDevicesScreen(
-                onRegisterManually = { navController.navigate(Screen.Form.createRoute()) },
+                onRegisterManually = { navigateOnce(Screen.Form.createRoute()) },
                 onRegisterDiscovered = { result: DiscoveryResult ->
-                    navController.navigate(Screen.Form.createRoute(ipAddress = result.address, macAddress = result.macAddress))
+                    navigateOnce(Screen.Form.createRoute(ipAddress = result.address, macAddress = result.macAddress))
                 },
             )
         }
         composable(Screen.Settings.route) {
             SettingsScreen(
-                onOpenApi = { navController.navigate(Screen.ApiSettings.route) },
-                onOpenTunnel = { navController.navigate(Screen.Tunnel.route) },
-                onOpenDiagnostics = { navController.navigate(Screen.Diagnostics.route) },
+                onOpenApi = { navigateOnce(Screen.ApiSettings.route) },
+                onOpenTunnel = { navigateOnce(Screen.Tunnel.route) },
+                onOpenDiagnostics = { navigateOnce(Screen.Diagnostics.route) },
                 viewModel = settingsViewModel,
             )
         }

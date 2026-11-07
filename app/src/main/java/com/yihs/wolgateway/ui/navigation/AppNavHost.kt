@@ -57,6 +57,12 @@ fun AppNavHost() {
     val selectedDeviceId = backStackEntry?.arguments?.getLong("deviceId")
         ?.takeUnless { it == 0L || it == -1L }
 
+    fun navigateOnce(route: String) {
+        navController.navigate(route) {
+            launchSingleTop = true
+        }
+    }
+
     val title = when (currentRoute) {
         Screen.Devices.route -> stringResource(R.string.screen_devices)
         Screen.AddDevices.route -> stringResource(R.string.screen_add_devices)
@@ -117,7 +123,7 @@ fun AppNavHost() {
                 actions = {
                     when (currentRoute) {
                         Screen.Devices.route -> IconButton(
-                            onClick = { navController.navigate(Screen.Settings.route) },
+                            onClick = { navigateOnce(Screen.Settings.route) },
                         ) {
                             Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.action_settings))
                         }
@@ -125,7 +131,7 @@ fun AppNavHost() {
                             IconButton(
                                 onClick = {
                                     selectedDeviceId?.let {
-                                        navController.navigate(Screen.Form.createRoute(it))
+                                        navigateOnce(Screen.Form.createRoute(it))
                                     }
                                 },
                                 enabled = selectedDeviceId != null,
@@ -146,7 +152,7 @@ fun AppNavHost() {
         floatingActionButton = {
             if (currentRoute == Screen.Devices.route) {
                 FloatingActionButton(
-                    onClick = { navController.navigate(Screen.AddDevices.route) },
+                    onClick = { navigateOnce(Screen.AddDevices.route) },
                     containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     contentColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
                 ) {

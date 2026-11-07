@@ -55,11 +55,7 @@ class DiagnosticsProvider @Inject constructor(
         }
         val selectedMode = if (rootRequested) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
         val rootMode = rootRequested &&
-            rootCapability == RootCapability.AVAILABLE &&
-            supervisorState in setOf(
-                com.yihs.wolgateway.root.RootSupervisorState.STARTING,
-                com.yihs.wolgateway.root.RootSupervisorState.RUNNING,
-            )
+            rootCapability == RootCapability.AVAILABLE
         val effectiveMode = if (rootMode) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
         val apiRunning = apiState == ServerState.RUNNING
         val tunnelConfigured = tunnel.tokenConfigured
