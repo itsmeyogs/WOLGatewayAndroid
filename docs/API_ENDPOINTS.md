@@ -63,6 +63,8 @@ Response `200`:
 }
 ```
 
+Endpoint ini tidak memakai authentication. Request yang tidak valid ke path lain ditangani sebagai routing error, bukan response health.
+
 Contoh:
 
 ```bash
@@ -77,6 +79,41 @@ Jika status check satu device gagal, device tersebut tetap dikembalikan mengguna
 
 Response `200`: array `DeviceResponse`.
 
+Response sukses `200`:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Office PC",
+    "ipAddress": "192.168.1.20",
+    "macAddress": "AA:BB:CC:DD:EE:FF",
+    "broadcastAddress": "255.255.255.255",
+    "wolPort": 9,
+    "statusCheckMethod": "ICMP_AND_TCP",
+    "statusCheckPort": 3389,
+    "status": "ONLINE",
+    "lastCheckAt": 1730000000000,
+    "lastCheckLatencyMs": 42,
+    "lastCheckReason": "tcp_connected",
+    "lastWolResult": "NOT_ATTEMPTED",
+    "lastWolAt": null
+  }
+]
+```
+
+Response gagal `401`:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Authentication required",
+    "fields": {}
+  }
+}
+```
+
 Contoh:
 
 ```bash
@@ -88,18 +125,105 @@ curl -i http://127.0.0.1:8080/api/v1/devices \
 
 Mengambil snapshot diagnostics gateway untuk monitoring dan troubleshooting. Endpoint ini read-only dan tidak menjalankan status check device atau network scan.
 
-Response `200` berisi versi aplikasi, Android/ABI, interface aktif, API, tunnel, `GatewayService`, safe errors, serta `selectedMode` dan `effectiveMode`.
+Response `200` mengikuti data yang ditampilkan Diagnostics Screen, dibagi menjadi `general` dan `serviceMode`.
+
+`serviceMode.data` berisi seluruh data mode runtime pada `effectiveMode`:
+
+- `effectiveMode: "STANDARD"`: delapan item Standard Mode.
+- `effectiveMode: "ROOT"`: enam item Root Mode.
+- Root fallback: `effectiveMode: "STANDARD"`, `fallback: true`, dan delapan item Standard Mode.
 
 Response juga memuat `device` (`manufacturer`, `model`, `product`) dan `battery` (`levelPercent`, `charging`, `batterySaver`). Field baterai dapat bernilai `null` bila tidak tersedia. Identifier sensitif seperti serial number, Android ID, dan IMEI tidak dikembalikan.
 
-Contoh:
+Response Standard Mode `200`:
+
+```json
+{
+  "general": {
+    "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a", "deviceClassification": "OTHER", "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"}, "tunnel": {"label": "Tunnel", "value": "Not configured", "status": "NOT_CONFIGURED"}, "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"}, "safeErrors": [],
+    "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"}, "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
+  },
+  "serviceMode": {
+    "effectiveMode": "STANDARD", "fallback": false,
+    "data": [
+      {"label": "Service running", "value": "Running", "status": "PASS"},
+      {"label": "Service mode", "value": "API only", "status": "PASS"},
+      {"label": "Foreground service", "value": "Running", "status": "PASS"},
+      {"label": "Notifications", "value": "Enabled", "status": "PASS"},
+      {"label": "API autostart", "value": "Enabled", "status": "PASS"},
+      {"label": "Tunnel autostart", "value": "Disabled", "status": "NOT_CONFIGURED"},
+      {"label": "Battery optimization", "value": "Exempt", "status": "PASS"},
+      {"label": "Boot recovery", "value": "Best effort by OS/OEM", "status": "WARN"}
+    ]
+  }
+}
+```
+
+Response Root Mode `200`:
+
+```json
+{
+  "general": {
+    "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a", "deviceClassification": "OTHER", "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"}, "tunnel": {"label": "Tunnel", "value": "Connected", "status": "PASS"}, "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"}, "safeErrors": [],
+    "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"}, "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
+  },
+  "serviceMode": {
+    "effectiveMode": "ROOT", "fallback": false,
+    "data": [
+      {"label": "Root capability", "value": "Available", "status": "PASS"},
+      {"label": "Root consent", "value": "Enabled", "status": "PASS"},
+      {"label": "Privilege check", "value": "Passed", "status": "PASS"},
+      {"label": "Root supervisor", "value": "Running", "status": "PASS"},
+      {"label": "Root features", "value": "Available", "status": "PASS"},
+      {"label": "Fallback", "value": "Disabled", "status": "PASS"}
+    ]
+  }
+}
+```
+
+Contoh fallback Root → Standard `200`:
+
+```json
+{
+  "general": {"safeErrors": ["Root mode unavailable; using Standard Mode"]},
+  "serviceMode": {
+    "effectiveMode": "STANDARD", "fallback": true,
+    "data": [
+      {"label": "Service running", "value": "Running", "status": "PASS"},
+      {"label": "Service mode", "value": "API only", "status": "PASS"},
+      {"label": "Foreground service", "value": "Running", "status": "PASS"},
+      {"label": "Notifications", "value": "Enabled", "status": "PASS"},
+      {"label": "API autostart", "value": "Enabled", "status": "PASS"},
+      {"label": "Tunnel autostart", "value": "Disabled", "status": "NOT_CONFIGURED"},
+      {"label": "Battery optimization", "value": "Exempt", "status": "PASS"},
+      {"label": "Boot recovery", "value": "Best effort by OS/OEM", "status": "WARN"}
+    ]
+  }
+}
+```
+
+Response gagal `401`:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Authentication required",
+    "fields": {}
+  }
+}
+```
+
+Contoh request:
 
 ```bash
 curl -i http://127.0.0.1:8080/api/v1/diagnostics \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-`effectiveMode` adalah mode runtime aktual. Jika Root Mode gagal dan fallback terjadi, response dapat memuat `selectedMode: "ROOT"`, `effectiveMode: "STANDARD"`, dan `fallback: true`.
+`effectiveMode` adalah mode runtime aktual. Jika Root Mode gagal dan fallback terjadi, response memuat `effectiveMode: "STANDARD"` dan `fallback: true`.
 
 Token, credential, raw shell output, command, dan path sensitif tidak pernah dikembalikan.
 
@@ -140,6 +264,30 @@ curl -i -X POST http://127.0.0.1:8080/api/v1/discovery/scan \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+Response gagal `401`:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Authentication required",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `504` jika scan melewati batas waktu:
+
+```json
+{
+  "error": {
+    "code": "discovery_timeout",
+    "message": "Device discovery timed out",
+    "fields": {}
+  }
+}
+```
+
 ### `GET /devices/{id}`
 
 Mengambil konfigurasi dan state terakhir satu device. Nilai `status`, `lastCheckAt`, dan `lastWolAt` berasal dari state terakhir yang tersimpan.
@@ -149,6 +297,41 @@ Response:
 - `200` — device ditemukan.
 - `401` — token tidak ada atau tidak valid.
 - `404` — ID tidak ditemukan.
+
+Response sukses `200`:
+
+```json
+{
+  "id": 1,
+  "name": "Office PC",
+  "ipAddress": "192.168.1.20",
+  "macAddress": "AA:BB:CC:DD:EE:FF",
+  "broadcastAddress": "255.255.255.255",
+  "wolPort": 9,
+  "statusCheckMethod": "ICMP_AND_TCP",
+  "statusCheckPort": 3389,
+  "status": "ONLINE",
+  "lastCheckAt": 1730000000000,
+  "lastCheckLatencyMs": 42,
+  "lastCheckReason": "tcp_connected",
+  "lastWolResult": "NOT_ATTEMPTED",
+  "lastWolAt": null
+}
+```
+
+Response gagal `404`:
+
+```json
+{
+  "error": {
+    "code": "device_not_found",
+    "message": "Device not found",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized` yang dijelaskan pada bagian Error response.
 
 Contoh:
 
@@ -195,6 +378,57 @@ Response:
 - `401` — token tidak ada atau tidak valid.
 - `409` — MAC address sudah digunakan device lain.
 
+Response sukses `201` memakai bentuk `DeviceResponse` yang sama seperti `GET /devices/{id}`.
+
+Contoh response sukses `201`:
+
+```json
+{
+  "id": 1,
+  "name": "Office PC",
+  "ipAddress": "192.168.1.20",
+  "macAddress": "AA:BB:CC:DD:EE:FF",
+  "broadcastAddress": "255.255.255.255",
+  "wolPort": 9,
+  "statusCheckMethod": "ICMP_AND_TCP",
+  "statusCheckPort": 3389,
+  "status": "UNKNOWN",
+  "lastCheckAt": null,
+  "lastCheckLatencyMs": null,
+  "lastCheckReason": null,
+  "lastWolResult": "NOT_ATTEMPTED",
+  "lastWolAt": null
+}
+```
+
+Response gagal `400`:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "message": "Device validation failed",
+    "fields": {
+      "IP_ADDRESS": "IP_ADDRESS_INVALID"
+    }
+  }
+}
+```
+
+Response gagal `409`:
+
+```json
+{
+  "error": {
+    "code": "duplicate_device",
+    "message": "Device already exists",
+    "fields": {"field": "MAC_ADDRESS"}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized`. Response `400` untuk JSON invalid memakai `invalid_json`.
+
 Contoh:
 
 ```bash
@@ -220,6 +454,43 @@ Response:
 - `404` — ID tidak ditemukan.
 - `409` — MAC address sudah digunakan device lain.
 
+Response sukses `200` memakai bentuk `DeviceResponse` yang sama seperti `GET /devices/{id}`.
+
+Contoh response sukses `200`:
+
+```json
+{
+  "id": 1,
+  "name": "Office PC Updated",
+  "ipAddress": "192.168.1.20",
+  "macAddress": "AA:BB:CC:DD:EE:FF",
+  "broadcastAddress": "255.255.255.255",
+  "wolPort": 9,
+  "statusCheckMethod": "ICMP_AND_TCP",
+  "statusCheckPort": 3389,
+  "status": "UNKNOWN",
+  "lastCheckAt": null,
+  "lastCheckLatencyMs": null,
+  "lastCheckReason": null,
+  "lastWolResult": "NOT_ATTEMPTED",
+  "lastWolAt": null
+}
+```
+
+Response gagal `404`:
+
+```json
+{
+  "error": {
+    "code": "device_not_found",
+    "message": "Device not found",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized`. Response `400` untuk ID/body invalid memakai `bad_request`; response `409` memakai `duplicate_device`.
+
 Contoh:
 
 ```bash
@@ -242,6 +513,22 @@ Response:
 - `204` — device berhasil dihapus.
 - `401` — token tidak ada atau tidak valid.
 - `404` — ID tidak ditemukan.
+
+Response sukses `204` tidak memiliki response body.
+
+Response gagal `404`:
+
+```json
+{
+  "error": {
+    "code": "device_not_found",
+    "message": "Device not found",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized`.
 
 Contoh:
 
@@ -279,6 +566,20 @@ Response:
 - `401` — token tidak ada atau tidak valid.
 - `404` — ID tidak ditemukan.
 
+Response gagal `404`:
+
+```json
+{
+  "error": {
+    "code": "device_not_found",
+    "message": "Device not found",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized`.
+
 Contoh:
 
 ```bash
@@ -306,6 +607,20 @@ Response:
 - `200` — operasi pengiriman selesai; periksa `result`.
 - `401` — token tidak ada atau tidak valid.
 - `404` — ID tidak ditemukan.
+
+Response gagal `404`:
+
+```json
+{
+  "error": {
+    "code": "device_not_found",
+    "message": "Device not found",
+    "fields": {}
+  }
+}
+```
+
+Response gagal `401` memakai envelope `unauthorized`.
 
 Contoh:
 
@@ -362,6 +677,7 @@ Kode error:
 | `validation_failed` | Field device tidak valid; detail ada di `fields` |
 | `duplicate_device` | MAC address sudah terdaftar |
 | `device_not_found` | ID device tidak ditemukan |
+| `discovery_timeout` | Discovery melewati batas waktu |
 | `request_too_large` | Body melebihi 64 KiB |
 | `bad_request` | Request atau parameter tidak valid |
 | `internal_error` | Error internal yang tidak diekspos detailnya |

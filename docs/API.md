@@ -15,7 +15,7 @@ The token is automatically generated on first Settings initialization and stored
 | Method | Path | Auth | Response |
 |---|---|---:|---|
 | GET | `/health` | No | `200 {"status":"ok"}` |
-| GET | `/diagnostics` | Yes | `200` safe gateway diagnostics |
+| GET | `/diagnostics` | Yes | `200` safe gateway diagnostics; `401` unauthorized |
 | POST | `/discovery/scan` | Yes | `200` completed LAN discovery result |
 | GET | `/devices` | Yes | `200` device array |
 | GET | `/devices/{id}` | Yes | `200` device |
@@ -29,7 +29,92 @@ Full paths include the base path. For example, the health URL is `/api/v1/health
 
 `GET /api/v1/devices` runs a best-effort status check for all saved devices, then returns one snapshot with the latest persisted status. A client does not need to call `/status` for each device. If one target check fails, its last persisted status is returned and the overall response still succeeds.
 
-`GET /api/v1/diagnostics` returns a redacted, read-only gateway snapshot. It includes application/runtime facts, API/tunnel/service state, safe errors, and selected/effective service mode. It never returns tokens, credentials, raw shell output, commands, or sensitive paths.
+`GET /api/v1/diagnostics` returns a redacted, read-only gateway snapshot matching the Diagnostics screen. It never returns tokens, credentials, raw shell output, commands, or sensitive paths.
+
+The response contains `general` and `serviceMode`. `serviceMode.data` contains the complete diagnostics list for `effectiveMode`:
+
+- `effectiveMode: "STANDARD"` — eight Standard Mode items.
+- `effectiveMode: "ROOT"` — six Root Mode items.
+- Root fallback — `effectiveMode: "STANDARD"`, `fallback: true`, and eight Standard Mode items.
+
+Standard Mode response example:
+
+```json
+{
+  "general": {
+    "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a",
+    "deviceClassification": "OTHER", "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"},
+    "tunnel": {"label": "Tunnel", "value": "Not configured", "status": "NOT_CONFIGURED"},
+    "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"},
+    "safeErrors": [],
+    "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"},
+    "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
+  },
+  "serviceMode": {
+    "effectiveMode": "STANDARD", "fallback": false,
+    "data": [
+      {"label": "Service running", "value": "Running", "status": "PASS"},
+      {"label": "Service mode", "value": "API only", "status": "PASS"},
+      {"label": "Foreground service", "value": "Running", "status": "PASS"},
+      {"label": "Notifications", "value": "Enabled", "status": "PASS"},
+      {"label": "API autostart", "value": "Enabled", "status": "PASS"},
+      {"label": "Tunnel autostart", "value": "Disabled", "status": "NOT_CONFIGURED"},
+      {"label": "Battery optimization", "value": "Exempt", "status": "PASS"},
+      {"label": "Boot recovery", "value": "Best effort by OS/OEM", "status": "WARN"}
+    ]
+  }
+}
+```
+
+Root Mode response example:
+
+```json
+{
+  "general": {
+    "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a",
+    "deviceClassification": "OTHER", "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"},
+    "tunnel": {"label": "Tunnel", "value": "Connected", "status": "PASS"},
+    "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"},
+    "safeErrors": [],
+    "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"},
+    "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
+  },
+  "serviceMode": {
+    "effectiveMode": "ROOT", "fallback": false,
+    "data": [
+      {"label": "Root capability", "value": "Available", "status": "PASS"},
+      {"label": "Root consent", "value": "Enabled", "status": "PASS"},
+      {"label": "Privilege check", "value": "Passed", "status": "PASS"},
+      {"label": "Root supervisor", "value": "Running", "status": "PASS"},
+      {"label": "Root features", "value": "Available", "status": "PASS"},
+      {"label": "Fallback", "value": "Disabled", "status": "PASS"}
+    ]
+  }
+}
+```
+
+Fallback response uses the complete Standard Mode data:
+
+```json
+{
+  "general": {"safeErrors": ["Root mode unavailable; using Standard Mode"]},
+  "serviceMode": {
+    "effectiveMode": "STANDARD", "fallback": true,
+    "data": [
+      {"label": "Service running", "value": "Running", "status": "PASS"},
+      {"label": "Service mode", "value": "API only", "status": "PASS"},
+      {"label": "Foreground service", "value": "Running", "status": "PASS"},
+      {"label": "Notifications", "value": "Enabled", "status": "PASS"},
+      {"label": "API autostart", "value": "Enabled", "status": "PASS"},
+      {"label": "Tunnel autostart", "value": "Disabled", "status": "NOT_CONFIGURED"},
+      {"label": "Battery optimization", "value": "Exempt", "status": "PASS"},
+      {"label": "Boot recovery", "value": "Best effort by OS/OEM", "status": "WARN"}
+    ]
+  }
+}
+```
 
 The diagnostics response also includes safe device and battery facts:
 
@@ -57,6 +142,7 @@ Battery fields are nullable when Android cannot provide a value. Serial numbers,
 | Endpoint | Success | Expected failures |
 |---|---:|---|
 | `GET /health` | `200` | — |
+| `GET /diagnostics` | `200` | `401` missing/invalid token |
 | `GET /devices` | `200` | `401` missing/invalid token |
 | `GET /devices/{id}` | `200` | `401`, `404` unknown ID |
 | `POST /devices` | `201` | `400` invalid JSON/fields, `401`, `409` duplicate MAC |
