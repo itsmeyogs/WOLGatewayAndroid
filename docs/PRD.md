@@ -118,6 +118,8 @@ Diagnostics selalu menampilkan versi aplikasi, versi Android/ABI, klasifikasi de
 
 Diagnostics menyediakan copy output yang stabil dan sudah di-redact. Tidak boleh ada token/credential, raw shell output, command, path sensitif, atau detail privilege escalation dalam UI, output copy, log, notification, report, maupun screenshot. Status memakai `pass`, `warn`, `fail`, dan `not configured`.
 
+Diagnostics juga menampilkan detail suhu HP bila tersedia: battery temperature, thermal status/headroom, source, mode, normalized sensor list, dan sample time. Standard Mode memakai Android public API. Root Mode boleh membaca thermal zone allowlist dengan bounded output dan fallback public API. Data unavailable tetap valid; tidak boleh ada raw path/command, serta thermal tidak menentukan status target WoL atau health API/tunnel.
+
 ## 6. Security requirements
 
 - Semua operasi administratif/API sensitif memerlukan token.

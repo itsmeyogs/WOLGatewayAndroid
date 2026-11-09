@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ fun DiagnosticsScreen(
 
 @Composable
 private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -> Unit) {
-    Section(stringResource(R.string.diagnostics_general)) {
+    DiagnosticsCard(stringResource(R.string.diagnostics_general)) {
         listOf(
             stringResource(R.string.diagnostics_app_version) to snapshot.appVersion,
             stringResource(R.string.diagnostics_android) to snapshot.androidVersion,
@@ -65,8 +66,8 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
          ).forEach { Text("${it.first}: ${it.second}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall) }
          Text("${stringResource(R.string.diagnostics_battery_level)}: ${snapshot.batteryInfo.levelPercent?.let { "$it%" } ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
          Text("${stringResource(R.string.diagnostics_charging)}: ${snapshot.batteryInfo.charging ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
-         Text("${stringResource(R.string.diagnostics_battery_saver)}: ${snapshot.batteryInfo.batterySaver ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
-        DiagnosticItemRow(snapshot.api)
+          Text("${stringResource(R.string.diagnostics_battery_saver)}: ${snapshot.batteryInfo.batterySaver ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+         DiagnosticItemRow(snapshot.api)
         DiagnosticItemRow(snapshot.tunnel)
         DiagnosticItemRow(snapshot.gatewayService)
         if (snapshot.safeErrors.isNotEmpty()) {
@@ -74,7 +75,17 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
             snapshot.safeErrors.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
     }
-    Section(if (snapshot.mode.name == "ROOT") stringResource(R.string.diagnostics_root_mode) else stringResource(R.string.diagnostics_standard_mode)) {
+    DiagnosticsCard(stringResource(R.string.diagnostics_thermal)) {
+        Text("${stringResource(R.string.diagnostics_thermal_status)}: ${snapshot.thermalInfo.status}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("${stringResource(R.string.diagnostics_thermal_source)}: ${snapshot.thermalInfo.source}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("${stringResource(R.string.diagnostics_thermal_battery)}: ${snapshot.thermalInfo.batteryTemperatureCelsius?.let { "%.1f °C".format(it) } ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("${stringResource(R.string.diagnostics_thermal_headroom)}: ${snapshot.thermalInfo.thermalHeadroom ?: stringResource(R.string.diagnostics_unknown)}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        snapshot.thermalInfo.sensors.forEach { sensor ->
+            Text("${sensor.name}: %.1f °C (${sensor.status})".format(sensor.temperatureCelsius), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        }
+        snapshot.thermalInfo.safeError?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+    DiagnosticsCard(if (snapshot.mode.name == "ROOT") stringResource(R.string.diagnostics_root_mode) else stringResource(R.string.diagnostics_standard_mode)) {
         (if (snapshot.mode.name == "ROOT") snapshot.root else snapshot.standard).forEach { DiagnosticItemRow(it) }
     }
     val labels = DiagnosticsCopyLabels(
@@ -101,6 +112,12 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
          batteryLevel = stringResource(R.string.diagnostics_battery_level),
          charging = stringResource(R.string.diagnostics_charging),
          batterySaver = stringResource(R.string.diagnostics_battery_saver),
+         thermal = stringResource(R.string.diagnostics_thermal),
+         thermalStatus = stringResource(R.string.diagnostics_thermal_status),
+         thermalSource = stringResource(R.string.diagnostics_thermal_source),
+         thermalBattery = stringResource(R.string.diagnostics_thermal_battery),
+         thermalHeadroom = stringResource(R.string.diagnostics_thermal_headroom),
+         thermalSampledAt = stringResource(R.string.diagnostics_thermal_sampled_at),
     )
     OutlinedButton(onClick = { onCopy(DiagnosticsCopyFormatter.format(snapshot, labels)) }, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.action_copy_diagnostics))
@@ -108,10 +125,15 @@ private fun DiagnosticsContent(snapshot: DiagnosticsSnapshot, onCopy: (String) -
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        HorizontalDivider()
-        content()
+private fun DiagnosticsCard(title: String, content: @Composable () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            content()
+        }
     }
 }

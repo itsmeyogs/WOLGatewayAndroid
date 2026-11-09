@@ -125,6 +125,8 @@ The page is mode-aware, not split into separate Standard/Root pages:
 
 The Settings Diagnostics row navigates to this page. Include an explicit copy action with stable, copy-safe redaction. Do not show raw shell output, commands, credentials, tokens, sensitive paths, or privilege-escalation details. Use `DiagnosticItem` states `pass`, `warn`, `fail`, and `not configured`.
 
+Diagnostics uses three separate Material surfaces/cards: `General`, `Thermal`, and the effective service mode (`Standard Mode` or `Root Mode`). General contains runtime/device/battery/API facts; Thermal contains overall thermal status, battery temperature, optional thermal headroom, source/mode, normalized sensor readings, and sample availability; Service Mode contains only the active mode diagnostics. Values use Celsius and technical monospace styling. Missing thermal data shows `unknown`; status uses text and icon, never color alone. Root-only sensor names and paths remain redacted.
+
 ## 4. Design tokens
 
 ### Color semantic tokens

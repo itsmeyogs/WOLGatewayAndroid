@@ -4,6 +4,10 @@ import com.yihs.wolgateway.diagnostics.DiagnosticItem
 import com.yihs.wolgateway.diagnostics.DiagnosticStatus
 import com.yihs.wolgateway.diagnostics.DiagnosticsMode
 import com.yihs.wolgateway.diagnostics.DiagnosticsSnapshot
+import com.yihs.wolgateway.diagnostics.DiagnosticsThermalInfo
+import com.yihs.wolgateway.diagnostics.DiagnosticsThermalSensor
+import com.yihs.wolgateway.diagnostics.ThermalSource
+import com.yihs.wolgateway.diagnostics.ThermalStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -40,6 +44,29 @@ class DiagnosticsResponseTest {
         assertEquals("STANDARD", response.serviceMode.effectiveMode)
         assertTrue(response.serviceMode.fallback)
         assertEquals(listOf("standard"), response.serviceMode.data.map { it.value })
+    }
+
+    @Test
+    fun thermalDetailsArePreservedInApiResponse() {
+        val response = snapshot(DiagnosticsMode.STANDARD).copy(
+            thermalInfo = DiagnosticsThermalInfo(
+                ThermalSource.ANDROID_PUBLIC,
+                DiagnosticsMode.STANDARD,
+                ThermalStatus.LIGHT,
+                34.2,
+                "LIGHT",
+                0.18,
+                listOf(DiagnosticsThermalSensor("battery", "BATTERY", 34.2, ThermalStatus.NOMINAL, ThermalSource.ANDROID_PUBLIC)),
+                1730000000000L,
+                true,
+            ),
+        ).toResponse().thermal
+
+        assertEquals("ANDROID_PUBLIC", response.source)
+        assertEquals("LIGHT", response.status)
+        assertEquals(34.2, response.batteryTemperatureCelsius!!, 0.01)
+        assertEquals("battery", response.sensors.single().name)
+        assertEquals(1730000000000L, response.sampledAt)
     }
 
     private fun snapshot(

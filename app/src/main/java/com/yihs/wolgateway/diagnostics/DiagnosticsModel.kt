@@ -6,6 +6,10 @@ enum class DeviceClassification { AUTOMATIC_TEST, EMULATOR, OTHER }
 
 enum class DiagnosticsMode { STANDARD, ROOT }
 
+enum class ThermalSource { ANDROID_PUBLIC, ROOT_ALLOWLIST, UNAVAILABLE }
+
+enum class ThermalStatus { NOMINAL, LIGHT, MODERATE, SEVERE, CRITICAL, UNKNOWN }
+
 data class DiagnosticItem(
     val label: String,
     val value: String,
@@ -22,6 +26,27 @@ data class DiagnosticsBatteryInfo(
     val levelPercent: Int?,
     val charging: Boolean?,
     val batterySaver: Boolean?,
+)
+
+data class DiagnosticsThermalSensor(
+    val name: String,
+    val type: String,
+    val temperatureCelsius: Double,
+    val status: ThermalStatus,
+    val source: ThermalSource,
+)
+
+data class DiagnosticsThermalInfo(
+    val source: ThermalSource,
+    val mode: DiagnosticsMode,
+    val status: ThermalStatus,
+    val batteryTemperatureCelsius: Double?,
+    val thermalStatus: String?,
+    val thermalHeadroom: Double?,
+    val sensors: List<DiagnosticsThermalSensor>,
+    val sampledAt: Long,
+    val available: Boolean,
+    val safeError: String? = null,
 )
 
 data class DiagnosticsSnapshot(
@@ -41,6 +66,17 @@ data class DiagnosticsSnapshot(
     val effectiveMode: DiagnosticsMode = mode,
     val deviceInfo: DiagnosticsDeviceInfo = DiagnosticsDeviceInfo("unknown", "unknown", "unknown"),
     val batteryInfo: DiagnosticsBatteryInfo = DiagnosticsBatteryInfo(null, null, null),
+    val thermalInfo: DiagnosticsThermalInfo = DiagnosticsThermalInfo(
+        ThermalSource.UNAVAILABLE,
+        DiagnosticsMode.STANDARD,
+        ThermalStatus.UNKNOWN,
+        null,
+        null,
+        null,
+        emptyList(),
+        0L,
+        false,
+    ),
 )
 
 data class DiagnosticsCopyLabels(
@@ -67,6 +103,12 @@ data class DiagnosticsCopyLabels(
     val batteryLevel: String,
     val charging: String,
     val batterySaver: String,
+    val thermal: String = "Thermal",
+    val thermalStatus: String = "Thermal status",
+    val thermalSource: String = "Thermal source",
+    val thermalBattery: String = "Battery temperature",
+    val thermalHeadroom: String = "Thermal headroom",
+    val thermalSampledAt: String = "Sampled at",
 )
 
 object DiagnosticsCopyFormatter {
@@ -81,6 +123,9 @@ object DiagnosticsCopyFormatter {
         appendLine("${labels.product}: ${snapshot.deviceInfo.product}")
         appendLine("${labels.network}: ${snapshot.networkInterface}")
         appendLine("${labels.battery}: ${labels.batteryLevel}=${snapshot.batteryInfo.levelPercent ?: "unknown"}, ${labels.charging}=${snapshot.batteryInfo.charging ?: "unknown"}, ${labels.batterySaver}=${snapshot.batteryInfo.batterySaver ?: "unknown"}")
+        val thermal = snapshot.thermalInfo
+        appendLine("${labels.thermal}: ${labels.thermalStatus}=${thermal.status}, ${labels.thermalSource}=${thermal.source}, ${labels.thermalBattery}=${thermal.batteryTemperatureCelsius?.formatCelsius() ?: "unknown"}, ${labels.thermalHeadroom}=${thermal.thermalHeadroom ?: "unknown"}, ${labels.thermalSampledAt}=${thermal.sampledAt}")
+        thermal.sensors.forEach { appendLine("${it.name}: ${it.temperatureCelsius.formatCelsius()} (${it.status}, ${it.source})") }
         appendLine("${labels.api}: ${snapshot.api.value}")
         appendLine("${labels.tunnel}: ${snapshot.tunnel.value}")
         appendLine("${labels.gatewayService}: ${snapshot.gatewayService.value}")
@@ -103,6 +148,8 @@ object DiagnosticsCopyFormatter {
             normalized.contains("/proc/", ignoreCase = true)
         ) redacted else normalized
     }
+
+    private fun Double.formatCelsius(): String = "%.1f C".format(java.util.Locale.US, this)
 
     private fun DeviceClassification.displayName(labels: DiagnosticsCopyLabels): String = when (this) {
         DeviceClassification.AUTOMATIC_TEST -> labels.automaticTest

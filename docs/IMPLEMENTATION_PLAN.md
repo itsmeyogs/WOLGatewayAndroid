@@ -148,6 +148,8 @@ Diagnostics is opened from a Settings row and uses one page with `General`, `Sta
 
 Acceptance: no API/tunnel/root secret appears in UI, copied output, logs, notifications, reports, or screenshots; diagnostics distinguish automatic test, emulator, and real device; Standard Mode remains unaffected by Root Mode diagnostics; copy output is stable and redacted; scroll/font scaling/accessibility requirements pass. Validate with unit redaction tests, `:app:assembleDebug`, `:app:testDebugUnitTest`, and Standard/Root device checks where hardware exists. Missing rooted hardware is `BLOCKED`, not `PASS`.
 
+Thermal detail implementation adds Android public battery/thermal readings, bounded normalized root thermal-zone readings, source/effective-mode/fallback metadata, nullable unavailable values, and top-level `thermal` in `GET /api/v1/diagnostics`. Root commands remain fixed and allowlisted; raw paths/output are excluded.
+
 ## 5. Mandatory report format
 
 Each checkpoint writes a local ignored report under `reports/checkpoints/` containing ID/name, purpose, completed work, files, decisions, actual build/test commands and results, acceptance statuses, unrun tests/reasons, known issues, risks, manual test recommendations, Git status, and commit hash if applicable.

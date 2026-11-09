@@ -125,7 +125,14 @@ curl -i http://127.0.0.1:8080/api/v1/devices \
 
 Mengambil snapshot diagnostics gateway untuk monitoring dan troubleshooting. Endpoint ini read-only dan tidak menjalankan status check device atau network scan.
 
-Response `200` mengikuti data yang ditampilkan Diagnostics Screen, dibagi menjadi `general` dan `serviceMode`.
+Response `200` mengikuti data yang ditampilkan Diagnostics Screen, dibagi menjadi tiga object top-level: `general`, `thermal`, dan `serviceMode`.
+
+```text
+DiagnosticsResponse
+├── general: DiagnosticsGeneralResponse
+├── thermal: DiagnosticsThermalResponse
+└── serviceMode: DiagnosticsServiceModeResponse
+```
 
 `serviceMode.data` berisi seluruh data mode runtime pada `effectiveMode`:
 
@@ -135,6 +142,58 @@ Response `200` mengikuti data yang ditampilkan Diagnostics Screen, dibagi menjad
 
 Response juga memuat `device` (`manufacturer`, `model`, `product`) dan `battery` (`levelPercent`, `charging`, `batterySaver`). Field baterai dapat bernilai `null` bila tidak tersedia. Identifier sensitif seperti serial number, Android ID, dan IMEI tidak dikembalikan.
 
+`thermal` adalah top-level object yang memuat suhu perangkat yang tersedia secara aman. Object `thermal` selalu ada; nilainya tidak digabung ke `general` dan tidak bernilai `null`.
+
+- `source`: `ANDROID_PUBLIC`, `ROOT_ALLOWLIST`, atau `UNAVAILABLE`.
+- `mode`: mode efektif saat sample diambil.
+- `status`: `NOMINAL`, `LIGHT`, `MODERATE`, `SEVERE`, `CRITICAL`, atau `UNKNOWN`.
+- `batteryTemperatureCelsius`, `thermalHeadroom`, dan `thermalStatus`: nullable bila API/OEM tidak menyediakan data.
+- `sensors`: maksimal 16 sensor dengan nama/type yang sudah dinormalisasi; tidak ada path thermal zone.
+- `sampledAt`: Unix epoch milliseconds.
+- `available`: false bila tidak ada data valid.
+- `safeError`: nullable, allowlisted, tanpa raw root output.
+
+### Schema `thermal`
+
+| Field | JSON type | Nullable | Nilai/arti |
+|---|---|---:|---|
+| `source` | `string` | No | `ANDROID_PUBLIC`, `ROOT_ALLOWLIST`, `UNAVAILABLE` |
+| `mode` | `string` | No | Effective mode saat sample: `STANDARD` atau `ROOT` |
+| `status` | `string` | No | `NOMINAL`, `LIGHT`, `MODERATE`, `SEVERE`, `CRITICAL`, `UNKNOWN` |
+| `batteryTemperatureCelsius` | `number` | Yes | Suhu battery dalam Celsius; berasal dari Android public battery API |
+| `thermalStatus` | `string` | Yes | Nama status thermal Android; biasanya sama dengan status aplikasi bila tersedia |
+| `thermalHeadroom` | `number` | Yes | Nilai headroom Android; bukan Celsius dan tidak boleh diperlakukan sebagai suhu |
+| `sensors` | `array` | No | Maksimal 16 sensor; dapat kosong |
+| `sampledAt` | `integer` | No | Unix epoch milliseconds |
+| `available` | `boolean` | No | `true` bila minimal satu data thermal valid tersedia |
+| `safeError` | `string` | Yes | Pesan aman; tidak memuat path, command, raw output, atau credential |
+
+### Schema `thermal.sensors[]`
+
+| Field | JSON type | Nullable | Nilai/arti |
+|---|---|---:|---|
+| `name` | `string` | No | Nama normalisasi: `battery`, `cpu`, `gpu`, `soc`, `skin`, `modem`, atau `unknown` |
+| `type` | `string` | No | `BATTERY`, `CPU`, `GPU`, `SOC`, `SKIN`, `MODEM`, atau `UNKNOWN` |
+| `temperatureCelsius` | `number` | No | Suhu sensor dalam Celsius |
+| `status` | `string` | No | Status thermal hasil klasifikasi sensor |
+| `source` | `string` | No | `ANDROID_PUBLIC` atau `ROOT_ALLOWLIST` |
+
+Sensor tidak boleh diasumsikan selalu ada, selalu lengkap, atau berada dalam urutan tertentu. Client harus memakai `name`/`type`, bukan index array.
+
+### Perbedaan hasil Standard dan Root
+
+| Kondisi runtime | `thermal.mode` | `thermal.source` | Sensor yang mungkin ada | `serviceMode.effectiveMode` | `serviceMode.fallback` |
+|---|---|---|---|---|---:|
+| Non-root/Standard dengan public data | `STANDARD` | `ANDROID_PUBLIC` | Biasanya `battery` | `STANDARD` | `false` |
+| Non-root tanpa data | `STANDARD` | `UNAVAILABLE` | `[]` | `STANDARD` | `false` |
+| Root aktif, allowlist terbaca | `ROOT` | `ROOT_ALLOWLIST` | `battery` + CPU/GPU/SoC/SKIN/vendor yang dikenali | `ROOT` | `false` |
+| Root aktif, sensor root tidak terbaca | `ROOT` | `ANDROID_PUBLIC` | Public data, biasanya `battery` | `ROOT` | `false` |
+| Root supervisor gagal total | `STANDARD` | `ANDROID_PUBLIC`/`UNAVAILABLE` | Standard Mode data | `STANDARD` | `true` |
+
+Root Mode tidak menjamin sensor tambahan. Root hanya membuka kemungkinan pembacaan sensor allowlist; ketersediaan tetap bergantung kernel, OEM, dan thermal zone device.
+
+Standard Mode memakai Android public API. Root Mode boleh memakai sensor thermal allowlist dan fallback ke public API bila pembacaan root gagal. Data thermal bersifat diagnostik, bukan bukti target WoL online dan bukan health check API/tunnel.
+
 Response Standard Mode `200`:
 
 ```json
@@ -143,6 +202,12 @@ Response Standard Mode `200`:
     "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a", "deviceClassification": "OTHER", "networkInterface": "wlan0",
     "api": {"label": "API", "value": "Running", "status": "PASS"}, "tunnel": {"label": "Tunnel", "value": "Not configured", "status": "NOT_CONFIGURED"}, "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"}, "safeErrors": [],
     "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"}, "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
+  },
+  "thermal": {
+    "source": "ANDROID_PUBLIC", "mode": "STANDARD", "status": "NOMINAL",
+    "batteryTemperatureCelsius": 34.2, "thermalStatus": "NOMINAL", "thermalHeadroom": 0.18,
+    "sensors": [{"name": "battery", "type": "BATTERY", "temperatureCelsius": 34.2, "status": "NOMINAL", "source": "ANDROID_PUBLIC"}],
+    "sampledAt": 1730000000000, "available": true, "safeError": null
   },
   "serviceMode": {
     "effectiveMode": "STANDARD", "fallback": false,
@@ -169,6 +234,12 @@ Response Root Mode `200`:
     "api": {"label": "API", "value": "Running", "status": "PASS"}, "tunnel": {"label": "Tunnel", "value": "Connected", "status": "PASS"}, "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"}, "safeErrors": [],
     "device": {"manufacturer": "Google", "model": "Pixel 7", "product": "panther"}, "battery": {"levelPercent": 82, "charging": true, "batterySaver": false}
   },
+  "thermal": {
+    "source": "ROOT_ALLOWLIST", "mode": "ROOT", "status": "NOMINAL",
+    "batteryTemperatureCelsius": 34.2, "thermalStatus": "NOMINAL", "thermalHeadroom": 0.18,
+    "sensors": [{"name": "battery", "type": "BATTERY", "temperatureCelsius": 34.2, "status": "NOMINAL", "source": "ANDROID_PUBLIC"}, {"name": "cpu", "type": "CPU", "temperatureCelsius": 41.0, "status": "NOMINAL", "source": "ROOT_ALLOWLIST"}],
+    "sampledAt": 1730000000000, "available": true, "safeError": null
+  },
   "serviceMode": {
     "effectiveMode": "ROOT", "fallback": false,
     "data": [
@@ -183,11 +254,46 @@ Response Root Mode `200`:
 }
 ```
 
-Contoh fallback Root → Standard `200`:
+Contoh Root aktif tetapi sensor root gagal; thermal fallback sendiri ke public API `200`:
+
+```json
+{
+  "general": {
+    "appVersion": "1.0", "androidVersion": "14", "abi": "arm64-v8a", "deviceClassification": "OTHER", "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"}, "tunnel": {"label": "Tunnel", "value": "Connected", "status": "PASS"}, "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"}, "safeErrors": ["Root thermal sensors unavailable; using Android public data"],
+    "device": {"manufacturer": "Samsung", "model": "SM-S918B", "product": "dm3q"}, "battery": {"levelPercent": 61, "charging": false, "batterySaver": false}
+  },
+  "thermal": {
+    "source": "ANDROID_PUBLIC", "mode": "ROOT", "status": "LIGHT",
+    "batteryTemperatureCelsius": 38.7, "thermalStatus": "LIGHT", "thermalHeadroom": 0.42,
+    "sensors": [{"name": "battery", "type": "BATTERY", "temperatureCelsius": 38.7, "status": "NOMINAL", "source": "ANDROID_PUBLIC"}],
+    "sampledAt": 1730000000000, "available": true, "safeError": "Root thermal sensors unavailable; using Android public data"
+  },
+  "serviceMode": {
+    "effectiveMode": "ROOT", "fallback": false,
+    "data": [
+      {"label": "Root capability", "value": "Available", "status": "PASS"},
+      {"label": "Root consent", "value": "Enabled", "status": "PASS"},
+      {"label": "Privilege check", "value": "Passed", "status": "PASS"},
+      {"label": "Root supervisor", "value": "Running", "status": "PASS"},
+      {"label": "Root features", "value": "Available", "status": "PASS"},
+      {"label": "Fallback", "value": "Disabled", "status": "PASS"}
+    ]
+  }
+}
+```
+
+Contoh Root supervisor gagal total lalu gateway kembali ke Standard Mode `200`:
 
 ```json
 {
   "general": {"safeErrors": ["Root mode unavailable; using Standard Mode"]},
+  "thermal": {
+    "source": "ANDROID_PUBLIC", "mode": "STANDARD", "status": "NOMINAL",
+    "batteryTemperatureCelsius": 34.2, "thermalStatus": "NOMINAL", "thermalHeadroom": 0.18,
+    "sensors": [{"name": "battery", "type": "BATTERY", "temperatureCelsius": 34.2, "status": "NOMINAL", "source": "ANDROID_PUBLIC"}],
+    "sampledAt": 1730000000000, "available": true, "safeError": null
+  },
   "serviceMode": {
     "effectiveMode": "STANDARD", "fallback": true,
     "data": [
@@ -224,6 +330,59 @@ curl -i http://127.0.0.1:8080/api/v1/diagnostics \
 ```
 
 `effectiveMode` adalah mode runtime aktual. Jika Root Mode gagal dan fallback terjadi, response memuat `effectiveMode: "STANDARD"` dan `fallback: true`.
+
+### Thermal unavailable `200`
+
+Data thermal tidak tersedia bukan error HTTP. Endpoint tetap mengembalikan `200`; client memakai `available: false`, `status: "UNKNOWN"`, field numerik `null`, dan `sensors: []`.
+
+```json
+{
+  "general": {
+    "appVersion": "1.0",
+    "androidVersion": "10",
+    "abi": "arm64-v8a",
+    "deviceClassification": "OTHER",
+    "networkInterface": "wlan0",
+    "api": {"label": "API", "value": "Running", "status": "PASS"},
+    "tunnel": {"label": "Tunnel", "value": "Not configured", "status": "NOT_CONFIGURED"},
+    "gatewayService": {"label": "GatewayService", "value": "Running", "status": "PASS"},
+    "safeErrors": [],
+    "device": {"manufacturer": "Generic", "model": "Device", "product": "device"},
+    "battery": {"levelPercent": null, "charging": null, "batterySaver": null}
+  },
+  "thermal": {
+    "source": "UNAVAILABLE",
+    "mode": "STANDARD",
+    "status": "UNKNOWN",
+    "batteryTemperatureCelsius": null,
+    "thermalStatus": null,
+    "thermalHeadroom": null,
+    "sensors": [],
+    "sampledAt": 1730000000000,
+    "available": false,
+    "safeError": null
+  },
+  "serviceMode": {
+    "effectiveMode": "STANDARD",
+    "fallback": false,
+    "data": []
+  }
+}
+```
+
+### Client handling rules
+
+- Parse `thermal` as a required object, not an optional nested field under `general`.
+- Check `available` before displaying temperature values.
+- Treat `batteryTemperatureCelsius`, `thermalStatus`, `thermalHeadroom`, and `safeError` as nullable.
+- Accept `sensors: []`; do not require CPU/GPU/SoC readings.
+- Do not use `thermalHeadroom` as Celsius.
+- Use `thermal.source` to show public versus root-allowlisted data.
+- Use `thermal.mode` for the mode that produced the thermal snapshot.
+- Use `serviceMode.effectiveMode` for the actual gateway service mode.
+- Use `serviceMode.fallback` to detect Root → Standard service fallback.
+- A thermal fallback (`thermal.mode: "ROOT"`, `thermal.source: "ANDROID_PUBLIC"`) is different from a gateway fallback (`serviceMode.effectiveMode: "STANDARD"`, `fallback: true`).
+- Ignore sensor order and tolerate future sensor names/types.
 
 Token, credential, raw shell output, command, dan path sensitif tidak pernah dikembalikan.
 

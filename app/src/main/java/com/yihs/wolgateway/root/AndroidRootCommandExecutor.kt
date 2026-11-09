@@ -59,20 +59,50 @@ class AndroidRootCommandExecutor @Inject constructor(
         return parts.getOrNull(index)?.takeIf { it.matches(MAC) }?.uppercase()
     }
 
+    override fun thermalSensors(): List<RootThermalReading> = (0 until MAX_THERMAL_ZONES).mapNotNull { zone ->
+        val base = "/sys/class/thermal/thermal_zone$zone"
+        val name = runThermal("cat", "$base/type")?.trim()?.let(::safeThermalName) ?: return@mapNotNull null
+        val raw = runThermal("cat", "$base/temp")?.trim()?.toDoubleOrNull() ?: return@mapNotNull null
+        val celsius = if (raw > 200) raw / 1_000.0 else raw
+        celsius.takeIf { it in MIN_THERMAL_C..MAX_THERMAL_C }?.let { RootThermalReading(name, it) }
+    }
+
+    private fun safeThermalName(value: String): String? = when {
+        value.contains("batt", ignoreCase = true) -> "battery"
+        value.contains("cpu", ignoreCase = true) -> "cpu"
+        value.contains("gpu", ignoreCase = true) -> "gpu"
+        value.contains("soc", ignoreCase = true) -> "soc"
+        value.contains("skin", ignoreCase = true) -> "skin"
+        value.contains("modem", ignoreCase = true) -> "modem"
+        else -> "unknown"
+    }
+
     private fun run(vararg args: String): String? = runCatching {
+        runProcess(TIMEOUT_MS, *args)
+    }.getOrNull()
+
+    private fun runThermal(vararg args: String): String? = runCatching {
+        runProcess(THERMAL_TIMEOUT_MS, *args)
+    }.getOrNull()
+
+    private fun runProcess(timeoutMs: Long, vararg args: String): String? {
         val command = args.joinToString(" ") { shellQuote(it) }
-        ProcessBuilder("su", "-c", command)
+        return ProcessBuilder("su", "-c", command)
             .redirectErrorStream(true)
             .start()
-            .also { if (!it.waitFor(TIMEOUT_MS, TimeUnit.MILLISECONDS)) it.destroyForcibly() }
+            .also { if (!it.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) it.destroyForcibly() }
             .takeIf { !it.isAlive }
             ?.inputStream?.bufferedReader()?.readText()
-    }.getOrNull()
+    }
 
     private fun shellQuote(value: String): String = "'${value.replace("'", "'\\''")}'"
 
     private companion object {
         const val TIMEOUT_MS = 2_000L
+        const val THERMAL_TIMEOUT_MS = 250L
+        const val MAX_THERMAL_ZONES = 16
+        const val MIN_THERMAL_C = -40.0
+        const val MAX_THERMAL_C = 150.0
         val MAC = Regex("[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}")
         val IPV4 = Regex("(?:\\d{1,3}\\.){3}\\d{1,3}")
     }

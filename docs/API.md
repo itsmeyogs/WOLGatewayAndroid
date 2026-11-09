@@ -31,7 +31,7 @@ Full paths include the base path. For example, the health URL is `/api/v1/health
 
 `GET /api/v1/diagnostics` returns a redacted, read-only gateway snapshot matching the Diagnostics screen. It never returns tokens, credentials, raw shell output, commands, or sensitive paths.
 
-The response contains `general` and `serviceMode`. `serviceMode.data` contains the complete diagnostics list for `effectiveMode`:
+The response contains `general`, `thermal`, and `serviceMode`. `serviceMode.data` contains the complete diagnostics list for `effectiveMode`:
 
 - `effectiveMode: "STANDARD"` — eight Standard Mode items.
 - `effectiveMode: "ROOT"` — six Root Mode items.
@@ -134,6 +134,29 @@ The diagnostics response also includes safe device and battery facts:
 ```
 
 Battery fields are nullable when Android cannot provide a value. Serial numbers, Android IDs, IMEI, credentials, and other sensitive identifiers are excluded.
+
+The same response includes detailed thermal diagnostics under top-level `thermal`:
+
+```json
+{
+  "thermal": {
+    "source": "ANDROID_PUBLIC",
+    "mode": "STANDARD",
+    "status": "NOMINAL",
+    "batteryTemperatureCelsius": 34.2,
+    "thermalStatus": "NOMINAL",
+    "thermalHeadroom": 0.18,
+    "sensors": [
+      {"name": "battery", "type": "BATTERY", "temperatureCelsius": 34.2, "status": "NOMINAL", "source": "ANDROID_PUBLIC"}
+    ],
+    "sampledAt": 1730000000000,
+    "available": true,
+    "safeError": null
+  }
+}
+```
+
+`ANDROID_PUBLIC` uses Android battery and thermal APIs without root. Active Root Mode may add bounded, allowlisted thermal-zone readings with `source: "ROOT_ALLOWLIST"`; raw paths, commands, and shell output never leave the app. Root failure falls back to public data. `UNAVAILABLE` and nullable values are valid on devices that expose no thermal data. Sensor data is informational only and does not change WoL target status or API/tunnel health.
 
 `POST /api/v1/discovery/scan` waits for the Android LAN scan to finish, up to the discovery timeout, then returns the final result. An empty `devices` array is valid. The scan does not persist devices; use `POST /api/v1/devices` after selecting a result. Discovery follows the effective runtime mode: Standard Mode uses the regular scan, while active Root Mode may resolve neighbor MAC addresses. Root fallback does not execute root commands from the API route.
 

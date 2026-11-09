@@ -148,7 +148,7 @@ The initial controller state exposes `tokenConfigured = false` without a start-f
 
 Diagnostics is exposed through one Settings → Diagnostics page. A diagnostics provider aggregates general runtime facts and mode-specific facts without owning service/controller lifecycle. General data covers app/device/network/API/tunnel/service state and safe errors. Standard Mode data covers foreground-service/notification state, API/tunnel autostart preferences, service mode, and relevant OS/OEM limitations. Root Mode data is isolated behind root capability/consent checks and covers privilege verification, supervisor state, root-dependent availability, fallback, and safe errors. Root capability can be shown as informational data while Standard Mode is active.
 
-Diagnostics output is bounded, derived, and redacted at the provider boundary. Copy serialization uses an allowlist, stable labels, and `configured/not configured` markers for secrets. It never includes raw shell output, commands, credentials, sensitive paths, or privilege-escalation details. Missing rooted hardware blocks Root Mode validation; it does not make Standard Mode diagnostics fail.
+Diagnostics output is bounded, derived, and redacted at the provider boundary. Copy serialization uses an allowlist, stable labels, and `configured/not configured` markers for secrets. It never includes raw shell output, commands, credentials, sensitive paths, or privilege-escalation details. Thermal data uses Android public APIs in Standard Mode; Root Mode may read only normalized, bounded allowlisted thermal zones and falls back to public data. Missing rooted hardware blocks Root Mode validation; it does not make Standard Mode diagnostics fail.
 
 ## 5. Lifecycle
 

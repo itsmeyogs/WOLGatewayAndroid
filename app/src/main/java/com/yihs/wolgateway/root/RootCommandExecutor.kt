@@ -8,4 +8,5 @@ interface RootCommandExecutor {
     fun isApiReady(port: Int): Boolean
     fun neighborMacs(): Map<String, String>
     fun resolveNeighborMac(address: String): String?
+    fun thermalSensors(): List<RootThermalReading> = emptyList()
 }

@@ -3,7 +3,6 @@ package com.yihs.wolgateway.diagnostics
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import android.os.BatteryManager
 import android.os.PowerManager
 import com.yihs.wolgateway.androidservice.GatewayServiceState
 import com.yihs.wolgateway.androidservice.GatewayServiceMode
@@ -37,6 +36,7 @@ class DiagnosticsProvider @Inject constructor(
     private val rootDetector: RootCapabilityDetector,
     private val rootSupervisor: RootSupervisor,
     private val batteryMonitor: BatteryMonitor,
+    private val thermalMonitor: ThermalMonitor,
     private val modeState: GatewayServiceModeState,
 ) {
     fun snapshot(): Flow<DiagnosticsSnapshot> = combine(
@@ -104,10 +104,14 @@ class DiagnosticsProvider @Inject constructor(
              deviceInfo = DiagnosticsDeviceInfo(Build.MANUFACTURER, Build.MODEL, Build.PRODUCT),
               batteryInfo = DiagnosticsBatteryInfo(null, null, null),
            )
-     }.combine(modeState.effective) { snapshot, mode ->
+      }.combine(modeState.effective) { snapshot, mode ->
          val diagnosticsMode = if (mode == GatewayServiceMode.ROOT) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
          snapshot.copy(mode = diagnosticsMode, effectiveMode = diagnosticsMode)
-     }.combine(batteryMonitor.state()) { snapshot, battery -> snapshot.copy(batteryInfo = battery) }
+      }.combine(batteryMonitor.state()) { snapshot, battery -> snapshot.copy(batteryInfo = battery)
+      }.combine(thermalMonitor.state()) { snapshot, thermal -> snapshot.copy(
+          thermalInfo = thermal,
+          safeErrors = (snapshot.safeErrors + listOfNotNull(thermal.safeError)).take(MAX_ERRORS),
+      ) }
 
     private fun item(label: Int, value: Int, status: DiagnosticStatus) = DiagnosticItem(
         label = context.getString(label),
@@ -125,16 +129,6 @@ class DiagnosticsProvider @Inject constructor(
         ?.isIgnoringBatteryOptimizations(context.packageName) == true
 
     private fun batteryStatus(): String = context.getString(if (batteryIgnored()) R.string.diagnostics_exempt else R.string.diagnostics_enabled)
-
-    private fun batteryInfo() = DiagnosticsBatteryInfo(
-        levelPercent = context.getSystemService(BatteryManager::class.java)
-            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            ?.takeIf { it in 0..100 },
-        charging = context.getSystemService(BatteryManager::class.java)
-            ?.isCharging,
-        batterySaver = context.getSystemService(PowerManager::class.java)
-            ?.isPowerSaveMode,
-    )
 
     private fun notificationStatus(running: Boolean): Pair<String, Boolean> {
         if (!running) return context.getString(R.string.diagnostics_not_active) to true
