@@ -16,8 +16,8 @@ android {
         applicationId = "com.yihs.wolgateway"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.01"
+        versionCode = 3
+        versionName = "1.02"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
