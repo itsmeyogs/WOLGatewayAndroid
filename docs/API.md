@@ -160,6 +160,8 @@ The same response includes detailed thermal diagnostics under top-level `thermal
 
 `POST /api/v1/discovery/scan` waits for the Android LAN scan to finish, up to the discovery timeout, then returns the final result. An empty `devices` array is valid. The scan does not persist devices; use `POST /api/v1/devices` after selecting a result. Discovery follows the effective runtime mode: Standard Mode uses the regular scan, while active Root Mode may resolve neighbor MAC addresses. Root fallback does not execute root commands from the API route.
 
+All endpoint operations are bounded internally with operation-specific safety ceilings. Timeout handling preserves the existing response schemas and error envelope. `GET /api/v1/devices` keeps its best-effort live checks; a slow target falls back to its persisted state. Diagnostics serves a cached snapshot while root and thermal probes refresh in the background. Discovery shares one active scan between concurrent requests; root neighbor MAC refresh is background-only and a missing MAC remains valid.
+
 ### Expected status codes
 
 | Endpoint | Success | Expected failures |

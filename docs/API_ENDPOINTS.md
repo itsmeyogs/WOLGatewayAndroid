@@ -388,7 +388,7 @@ Token, credential, raw shell output, command, dan path sensitif tidak pernah dik
 
 ### `POST /discovery/scan`
 
-Memindai subnet IPv4 pada interface Android yang aktif. Endpoint menunggu scan selesai, dengan batas waktu discovery sekitar 15 detik, lalu mengembalikan hasil final. Hasil kosong adalah response valid.
+Memindai subnet IPv4 pada interface Android yang aktif. Endpoint menunggu scan selesai, dengan batas waktu discovery sekitar 30 detik, lalu mengembalikan hasil final. Hasil kosong adalah response valid.
 
 Discovery tidak otomatis menyimpan device. Client memilih hasil lalu memakai `POST /devices` untuk registrasi.
 
@@ -408,7 +408,7 @@ Response `200`:
 }
 ```
 
-IP yang sudah tersimpan tidak dikembalikan. Hanya satu scan yang berjalan pada satu waktu; request scan berikutnya menunggu scan aktif selesai.
+IP yang sudah tersimpan tidak dikembalikan. Hanya satu scan yang berjalan pada satu waktu; request scan berikutnya berbagi hasil scan aktif yang sama.
 
 Mode service mengikuti runtime gateway:
 
@@ -847,6 +847,10 @@ API tidak menaruh token atau secret pada response error, log, notification, atau
 
 - `GET /devices` menjalankan status check best-effort untuk seluruh device, lalu mengembalikan status terbaru yang tersimpan.
 - Kegagalan status check satu device tidak menggagalkan response seluruh daftar; status terakhir device tersebut tetap dikembalikan.
+- Semua operasi endpoint memiliki batas waktu internal berbasis operasi; timeout tidak mengubah bentuk response sukses atau error envelope.
+- `GET /devices` tetap menjalankan live check best-effort. Target lambat memakai state terakhir yang tersimpan.
+- Diagnostics mengembalikan snapshot cache; probe root dan thermal diperbarui di background.
+- Request discovery bersamaan berbagi satu scan aktif; refresh MAC Root berjalan di background dan MAC yang belum tersedia tetap valid sebagai `null`.
 - API server harus aktif melalui Settings sebelum endpoint dapat digunakan.
 - Tunnel hanya meneruskan API yang sama; tunnel bukan mekanisme autentikasi.
 - Request body dibatasi 64 KiB.

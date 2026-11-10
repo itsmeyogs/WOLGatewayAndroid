@@ -4,11 +4,13 @@ import com.yihs.wolgateway.root.RootCommandExecutor
 import com.yihs.wolgateway.androidservice.GatewayServiceMode
 import com.yihs.wolgateway.androidservice.GatewayServiceModeState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -17,17 +19,24 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.Socket
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 class AndroidNetworkDiscovery @Inject constructor(
     private val rootExecutor: RootCommandExecutor,
     private val modeState: GatewayServiceModeState,
 ) : NetworkDiscovery {
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val cachedNeighborMacs = ConcurrentHashMap<String, String>()
+    private val neighborRefreshActive = AtomicBoolean(false)
+
     override suspend fun scan(): List<DiscoveryResult> = withContext(Dispatchers.IO) {
         withTimeout(SCAN_TIMEOUT_MS) {
             val subnet = findSubnet() ?: return@withTimeout emptyList()
             val rootMode = modeState.effective.value == GatewayServiceMode.ROOT
-            val neighborMacs = if (rootMode) rootExecutor.neighborMacs() else emptyMap()
+            if (rootMode) refreshNeighborCacheInBackground()
+            val neighborMacs = if (rootMode) cachedNeighborMacs.toMap() else emptyMap()
             val results = buildList {
                 subnet.hosts().chunked(MAX_CONCURRENT_PROBES).forEach { addresses ->
                     coroutineContext.ensureActive()
@@ -86,9 +95,20 @@ class AndroidNetworkDiscovery @Inject constructor(
             rootMode = rootMode,
             address = hostAddress,
             neighborMacs = neighborMacs,
-            resolveNeighborMac = rootExecutor::resolveNeighborMac,
+            resolveNeighborMac = { null },
         )
         DiscoveryResult(hostAddress, hostName, openPorts, macAddress)
+    }
+
+    private fun refreshNeighborCacheInBackground() {
+        if (!neighborRefreshActive.compareAndSet(false, true)) return
+        backgroundScope.launch {
+            try {
+                cachedNeighborMacs.putAll(rootExecutor.neighborMacs())
+            } finally {
+                neighborRefreshActive.set(false)
+            }
+        }
     }
 
     private fun isOpen(address: InetAddress, port: Int): Boolean = runCatching {
@@ -102,7 +122,7 @@ class AndroidNetworkDiscovery @Inject constructor(
         const val CONNECT_TIMEOUT_MS = 180
         const val HOST_TIMEOUT_MS = 700L
         const val HOSTNAME_TIMEOUT_MS = 250L
-        const val SCAN_TIMEOUT_MS = 15_000L
+        const val SCAN_TIMEOUT_MS = 30_000L
         const val MAX_CONCURRENT_PROBES = 32
         val COMMON_PORTS = intArrayOf(22, 80, 443, 445, 3389)
     }

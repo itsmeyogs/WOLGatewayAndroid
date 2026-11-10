@@ -21,9 +21,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.NetworkInterface
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 
@@ -39,7 +45,14 @@ class DiagnosticsProvider @Inject constructor(
     private val thermalMonitor: ThermalMonitor,
     private val modeState: GatewayServiceModeState,
 ) {
-    fun snapshot(): Flow<DiagnosticsSnapshot> = combine(
+    private val diagnosticsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val cachedSnapshot: StateFlow<DiagnosticsSnapshot> = buildSnapshotFlow()
+        .stateIn(diagnosticsScope, SharingStarted.Eagerly, initialSnapshot())
+
+    fun snapshot(): Flow<DiagnosticsSnapshot> = cachedSnapshot
+
+    private fun buildSnapshotFlow(): Flow<DiagnosticsSnapshot> = combine(
         preferences.data,
         gatewayServer.state,
         tunnelController.state,
@@ -49,7 +62,9 @@ class DiagnosticsProvider @Inject constructor(
         val rootRequested = values[GatewayStartupPreferences.ROOT_MODE_ENABLED] == true &&
             values[GatewayStartupPreferences.ROOT_MODE_CONSENTED] == true
         val rootCapability = if (rootRequested) {
-            withContext(Dispatchers.IO) { rootDetector.detect() }
+            withTimeoutOrNull(ROOT_DETECTION_TIMEOUT_MS) {
+                withContext(Dispatchers.IO) { rootDetector.detect() }
+            } ?: RootCapability.UNKNOWN
         } else {
             RootCapability.UNKNOWN
         }
@@ -82,7 +97,7 @@ class DiagnosticsProvider @Inject constructor(
             item(R.string.diagnostics_root_features, if (rootMode) R.string.diagnostics_available else R.string.diagnostics_fallback_standard, if (rootMode) DiagnosticStatus.PASS else DiagnosticStatus.WARN),
             item(R.string.diagnostics_fallback, (supervisorState.name == "FALLBACK").toDisplay(), if (supervisorState.name == "FALLBACK") DiagnosticStatus.WARN else DiagnosticStatus.PASS),
         )
-         DiagnosticsSnapshot(
+          DiagnosticsSnapshot(
             appVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: context.getString(R.string.diagnostics_unknown),
             androidVersion = Build.VERSION.RELEASE ?: Build.VERSION.SDK_INT.toString(),
             abi = Build.SUPPORTED_ABIS.firstOrNull() ?: context.getString(R.string.diagnostics_unknown),
@@ -108,10 +123,31 @@ class DiagnosticsProvider @Inject constructor(
          val diagnosticsMode = if (mode == GatewayServiceMode.ROOT) DiagnosticsMode.ROOT else DiagnosticsMode.STANDARD
          snapshot.copy(mode = diagnosticsMode, effectiveMode = diagnosticsMode)
       }.combine(batteryMonitor.state()) { snapshot, battery -> snapshot.copy(batteryInfo = battery)
-      }.combine(thermalMonitor.state()) { snapshot, thermal -> snapshot.copy(
+       }.combine(thermalMonitor.state()) { snapshot, thermal -> snapshot.copy(
           thermalInfo = thermal,
           safeErrors = (snapshot.safeErrors + listOfNotNull(thermal.safeError)).take(MAX_ERRORS),
-      ) }
+       ) }
+
+    private fun initialSnapshot(): DiagnosticsSnapshot {
+        val unknown = context.getString(R.string.diagnostics_unknown)
+        return DiagnosticsSnapshot(
+            appVersion = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            }.getOrNull() ?: unknown,
+            androidVersion = Build.VERSION.RELEASE ?: Build.VERSION.SDK_INT.toString(),
+            abi = Build.SUPPORTED_ABIS.firstOrNull() ?: unknown,
+            deviceClassification = classifyDevice(Build.FINGERPRINT, Build.MODEL),
+            networkInterface = context.getString(R.string.diagnostics_not_detected),
+            api = item(R.string.diagnostics_api, R.string.diagnostics_stopped, DiagnosticStatus.WARN),
+            tunnel = item(R.string.diagnostics_tunnel, R.string.tunnel_status_not_configured, DiagnosticStatus.NOT_CONFIGURED),
+            gatewayService = item(R.string.diagnostics_gateway_service, R.string.diagnostics_not_active, DiagnosticStatus.WARN),
+            safeErrors = emptyList(),
+            mode = DiagnosticsMode.STANDARD,
+            standard = emptyList(),
+            root = emptyList(),
+            deviceInfo = DiagnosticsDeviceInfo(Build.MANUFACTURER, Build.MODEL, Build.PRODUCT),
+        )
+    }
 
     private fun item(label: Int, value: Int, status: DiagnosticStatus) = DiagnosticItem(
         label = context.getString(label),
@@ -146,6 +182,7 @@ class DiagnosticsProvider @Inject constructor(
 
     private companion object {
         const val MAX_ERRORS = 5
+        const val ROOT_DETECTION_TIMEOUT_MS = 5_000L
         fun Boolean.toDisplay() = if (this) R.string.diagnostics_enabled else R.string.diagnostics_disabled
         fun Boolean.toRunningDisplay() = if (this) R.string.diagnostics_running else R.string.diagnostics_stopped
         fun Boolean.status() = if (this) DiagnosticStatus.PASS else DiagnosticStatus.WARN

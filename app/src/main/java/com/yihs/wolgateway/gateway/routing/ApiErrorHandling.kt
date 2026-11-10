@@ -17,6 +17,9 @@ import kotlinx.serialization.SerializationException
 
 fun Application.configureApiErrorHandling() {
     install(StatusPages) {
+        exception<ApiOperationTimeoutException> { call, _ ->
+            call.respond(HttpStatusCode.InternalServerError, ApiErrorResponse(ApiError("internal_error", "Internal server error")))
+        }
         exception<DiscoveryTimeoutException> { call, _ ->
             call.respond(HttpStatusCode.GatewayTimeout, ApiErrorResponse(ApiError("discovery_timeout", "Device discovery timed out")))
         }

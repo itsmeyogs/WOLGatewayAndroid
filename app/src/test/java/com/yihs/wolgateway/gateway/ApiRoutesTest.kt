@@ -35,6 +35,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -140,6 +141,21 @@ class ApiRoutesTest {
         assertTrue(response.bodyAsText().contains("Office PC"))
     }
 
+    @Test
+    fun deviceListReturnsWithinBoundedRefreshWindowAndKeepsResponseShape() = testApplication {
+        val repository = FakeDeviceRepository().apply {
+            addDevice(Device(name = "Slow PC", ipAddress = "192.168.1.20", macAddress = "AA:BB:CC:DD:EE:FF"))
+        }
+        application {
+            installTestApi(repository, statusChecker = SlowStatusChecker())
+        }
+
+        val response = client.get("/api/v1/devices") { bearer() }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(response.bodyAsText().contains("Slow PC"))
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.bearer() {
         header(HttpHeaders.Authorization, "Bearer $token")
     }
@@ -147,6 +163,7 @@ class ApiRoutesTest {
     private fun io.ktor.server.application.Application.installTestApi(
         repository: FakeDeviceRepository,
         networkDiscovery: NetworkDiscovery = FakeNetworkDiscovery(emptyList()),
+        statusChecker: StatusChecker = FakeStatusChecker(),
     ) {
         install(ContentNegotiation) { json(Json { encodeDefaults = true }) }
         configureApiErrorHandling()
@@ -154,7 +171,7 @@ class ApiRoutesTest {
             repository = repository,
             tokenStore = FakeTokenStore(token),
             wakeDevice = WakeDeviceUseCase(repository, FakeWolSender()),
-            checkDeviceStatus = CheckDeviceStatusUseCase(repository, FakeStatusChecker()),
+             checkDeviceStatus = CheckDeviceStatusUseCase(repository, statusChecker),
             networkDiscovery = networkDiscovery,
         )
     }
@@ -205,4 +222,11 @@ private class FakeWolSender : WolSender {
 private class FakeStatusChecker : StatusChecker {
     override suspend fun check(ipAddress: String, method: StatusCheckMethod, port: Int) =
         StatusCheckResult(DeviceStatus.ONLINE, method, 1, "test")
+}
+
+private class SlowStatusChecker : StatusChecker {
+    override suspend fun check(ipAddress: String, method: StatusCheckMethod, port: Int): StatusCheckResult {
+        delay(10_000)
+        return StatusCheckResult(DeviceStatus.ONLINE, method, 1, "test")
+    }
 }

@@ -37,17 +37,29 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.security.MessageDigest
 
 private const val API_PREFIX = "/api/v1"
 private const val MAX_REQUEST_BYTES = 64 * 1024L
+private const val AUTH_TIMEOUT_MS = 2_000L
+private const val CRUD_TIMEOUT_MS = 15_000L
+private const val DIAGNOSTICS_TIMEOUT_MS = 10_000L
+private const val DISCOVERY_REQUEST_TIMEOUT_MS = 30_000L
+private const val DEVICES_REFRESH_TIMEOUT_MS = 10_000L
 
 fun Application.configureApiRoutes(
     repository: DeviceRepository,
@@ -58,12 +70,14 @@ fun Application.configureApiRoutes(
     networkDiscovery: NetworkDiscovery? = null,
 ) {
     val discoveryMutex = Mutex()
+    val discoveryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    var activeDiscovery: Deferred<List<com.yihs.wolgateway.network.discovery.DiscoveryResult>>? = null
     val authenticated = createRouteScopedPlugin("ApiAuthentication") {
         onCall { call ->
             val authorization = call.request.headers[HttpHeaders.Authorization]
             val supplied = authorization?.removePrefix("Bearer ")
                 ?.takeIf { it != authorization }
-            val configuredToken = tokenStore.read()
+            val configuredToken = withTimeoutOrNull(AUTH_TIMEOUT_MS) { tokenStore.read() }
             if (supplied == null || configuredToken == null || !constantTimeEquals(supplied, configuredToken)) {
                 throw UnauthorizedRequestException()
             }
@@ -76,55 +90,72 @@ fun Application.configureApiRoutes(
                 install(authenticated)
                 get {
                     call.rejectOversizedRequest()
-                    val devices = repository.observeDevices().first()
-                    coroutineScope {
-                        devices.map { device ->
-                            async {
-                                try {
-                                    checkDeviceStatus(device.id)
-                                } catch (error: CancellationException) {
-                                    throw error
-                                } catch (_: Exception) {
-                                    // Keep the last persisted status when one target check fails.
-                                }
+                    val response = withApiTimeout(CRUD_TIMEOUT_MS) {
+                        val devices = repository.observeDevices().first()
+                        withTimeoutOrNull(DEVICES_REFRESH_TIMEOUT_MS) {
+                            coroutineScope {
+                                devices.map { device ->
+                                    async {
+                                        try {
+                                            checkDeviceStatus(device.id)
+                                        } catch (error: CancellationException) {
+                                            throw error
+                                        } catch (_: Exception) {
+                                            // Keep the last persisted status when one target check fails.
+                                        }
+                                    }
+                                }.awaitAll()
                             }
-                        }.awaitAll()
+                        }
+                        repository.observeDevices().first().map(Device::toResponse)
                     }
-                    call.respond(repository.observeDevices().first().map(Device::toResponse))
+                    call.respond(response)
                 }
                 post {
                     call.rejectOversizedRequest()
-                    val request = call.receive<CreateDeviceRequest>()
-                    val id = repository.addDevice(request.toDomain())
-                    call.respond(HttpStatusCode.Created, repository.getDevice(id)!!.toResponse())
+                    withApiTimeout(CRUD_TIMEOUT_MS) {
+                        val request = call.receive<CreateDeviceRequest>()
+                        val id = repository.addDevice(request.toDomain())
+                        call.respond(HttpStatusCode.Created, repository.getDevice(id)!!.toResponse())
+                    }
                 }
                 route("/{id}") {
                     get {
-                        val id = call.deviceId()
-                        val device = repository.getDevice(id) ?: throw DeviceNotFoundException(id)
-                        call.respond(device.toResponse())
+                        withApiTimeout(CRUD_TIMEOUT_MS) {
+                            val id = call.deviceId()
+                            val device = repository.getDevice(id) ?: throw DeviceNotFoundException(id)
+                            call.respond(device.toResponse())
+                        }
                     }
                     put {
                         call.rejectOversizedRequest()
-                        val id = call.deviceId()
-                        repository.updateDevice(call.receive<UpdateDeviceRequest>().toDomain(id))
-                        call.respond(repository.getDevice(id)!!.toResponse())
+                        withApiTimeout(CRUD_TIMEOUT_MS) {
+                            val id = call.deviceId()
+                            repository.updateDevice(call.receive<UpdateDeviceRequest>().toDomain(id))
+                            call.respond(repository.getDevice(id)!!.toResponse())
+                        }
                     }
                     delete {
-                        val id = call.deviceId()
-                        if (repository.getDevice(id) == null) throw DeviceNotFoundException(id)
-                        repository.deleteDevice(id)
-                        call.respond(HttpStatusCode.NoContent)
+                        withApiTimeout(CRUD_TIMEOUT_MS) {
+                            val id = call.deviceId()
+                            if (repository.getDevice(id) == null) throw DeviceNotFoundException(id)
+                            repository.deleteDevice(id)
+                            call.respond(HttpStatusCode.NoContent)
+                        }
                     }
                     get("/status") {
-                        val id = call.deviceId()
-                        val result = checkDeviceStatus(id)
-                        call.respond(StatusResponse(id, result.status, result.method, result.latencyMs, result.reason, repository.getDevice(id)?.lastCheckAt))
+                        withApiTimeout(CRUD_TIMEOUT_MS) {
+                            val id = call.deviceId()
+                            val result = checkDeviceStatus(id)
+                            call.respond(StatusResponse(id, result.status, result.method, result.latencyMs, result.reason, repository.getDevice(id)?.lastCheckAt))
+                        }
                     }
                     post("/wake") {
-                        val id = call.deviceId()
-                        val result = wakeDevice(id)
-                        call.respond(WakeResponse(id, result.result, result.latencyMs, result.reason))
+                        withApiTimeout(CRUD_TIMEOUT_MS) {
+                            val id = call.deviceId()
+                            val result = wakeDevice(id)
+                            call.respond(WakeResponse(id, result.result, result.latencyMs, result.reason))
+                        }
                     }
                 }
             }
@@ -132,7 +163,9 @@ fun Application.configureApiRoutes(
                 install(authenticated)
                 get {
                     val provider = diagnosticsProvider ?: throw IllegalStateException("Diagnostics unavailable")
-                    call.respond(provider.snapshot().first().toResponse())
+                    withApiTimeout(DIAGNOSTICS_TIMEOUT_MS) {
+                        call.respond(provider.snapshot().first().toResponse())
+                    }
                 }
             }
             route("/discovery") {
@@ -141,11 +174,27 @@ fun Application.configureApiRoutes(
                     val discovery = networkDiscovery ?: throw IllegalStateException("Discovery unavailable")
                     val startedAt = System.nanoTime()
                     val results = try {
-                        discoveryMutex.withLock { discovery.scan() }
+                        withTimeout(DISCOVERY_REQUEST_TIMEOUT_MS) {
+                            val scan = discoveryMutex.withLock {
+                                activeDiscovery?.takeIf { it.isActive } ?: discoveryScope.async {
+                                    withTimeout(DISCOVERY_REQUEST_TIMEOUT_MS) { discovery.scan() }
+                                }.also { created ->
+                                    activeDiscovery = created
+                                    created.invokeOnCompletion {
+                                        discoveryScope.launch {
+                                            discoveryMutex.withLock {
+                                                if (activeDiscovery === created) activeDiscovery = null
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            scan.await()
+                        }
                     } catch (_: TimeoutCancellationException) {
                         throw DiscoveryTimeoutException()
                     }
-                    val savedDevices = repository.observeDevices().first()
+                    val savedDevices = withApiTimeout(CRUD_TIMEOUT_MS) { repository.observeDevices().first() }
                     call.respond(
                         DiscoveryResponse(
                             durationMs = (System.nanoTime() - startedAt) / 1_000_000,
@@ -157,6 +206,12 @@ fun Application.configureApiRoutes(
             }
         }
     }
+}
+
+private suspend inline fun <T> withApiTimeout(timeoutMs: Long, crossinline block: suspend () -> T): T = try {
+    withTimeout(timeoutMs) { block() }
+} catch (_: TimeoutCancellationException) {
+    throw ApiOperationTimeoutException()
 }
 
 private fun constantTimeEquals(left: String, right: String): Boolean = MessageDigest.isEqual(
@@ -174,6 +229,8 @@ private suspend fun io.ktor.server.application.ApplicationCall.rejectOversizedRe
 class RequestRejectedException : RuntimeException()
 
 class DiscoveryTimeoutException : RuntimeException()
+
+class ApiOperationTimeoutException : RuntimeException()
 
 class UnauthorizedRequestException : RuntimeException()
 
