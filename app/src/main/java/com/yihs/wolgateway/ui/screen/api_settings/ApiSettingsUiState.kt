@@ -13,6 +13,10 @@ data class ApiSettingsUiState(
     val isEditingCustomToken: Boolean = false,
     val isLoading: Boolean = true,
     val portError: Boolean = false,
+    val developmentOrigins: String = "http://localhost:9999",
+    val productionOrigins: String = "",
+    val corsError: Boolean = false,
+    val isCorsSaving: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_BIND_ADDRESS = "127.0.0.1"

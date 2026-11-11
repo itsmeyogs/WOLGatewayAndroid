@@ -7,6 +7,7 @@ sealed class Screen(val route: String) {
     data object AddDevices : Screen("add-devices")
     data object Settings : Screen("settings")
     data object ApiSettings : Screen("settings/api")
+    data object CorsSettings : Screen("settings/api/cors")
     data object Tunnel : Screen("settings/tunnel")
     data object Diagnostics : Screen("settings/diagnostics")
     data object Details : Screen("device/{deviceId}") {

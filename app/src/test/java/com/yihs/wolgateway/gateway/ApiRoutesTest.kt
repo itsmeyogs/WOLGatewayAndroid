@@ -17,10 +17,12 @@ import com.yihs.wolgateway.network.discovery.NetworkDiscovery
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.routing.configureApiErrorHandling
 import com.yihs.wolgateway.gateway.routing.configureApiRoutes
+import com.yihs.wolgateway.gateway.server.configureApiCors
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.options
 import io.ktor.client.request.setBody
 import io.ktor.client.request.put
 import io.ktor.client.statement.bodyAsText
@@ -28,6 +30,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.HttpHeaders.AccessControlAllowOrigin
+import io.ktor.http.HttpHeaders.AccessControlRequestHeaders
+import io.ktor.http.HttpHeaders.AccessControlRequestMethod
+import io.ktor.http.HttpHeaders.Origin
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.application.install
 import io.ktor.server.testing.testApplication
@@ -142,6 +148,18 @@ class ApiRoutesTest {
     }
 
     @Test
+    fun allowedOriginPassesCorsPreflight() = testApplication {
+        application { installTestApi(FakeDeviceRepository()) }
+        val response = client.options("/api/v1/devices") {
+            header(Origin, "http://localhost:9999")
+            header(AccessControlRequestMethod, "GET")
+            header(AccessControlRequestHeaders, "Authorization")
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("http://localhost:9999", response.headers[AccessControlAllowOrigin])
+    }
+
+    @Test
     fun deviceListReturnsWithinBoundedRefreshWindowAndKeepsResponseShape() = testApplication {
         val repository = FakeDeviceRepository().apply {
             addDevice(Device(name = "Slow PC", ipAddress = "192.168.1.20", macAddress = "AA:BB:CC:DD:EE:FF"))
@@ -165,6 +183,7 @@ class ApiRoutesTest {
         networkDiscovery: NetworkDiscovery = FakeNetworkDiscovery(emptyList()),
         statusChecker: StatusChecker = FakeStatusChecker(),
     ) {
+        configureApiCors(listOf("http://localhost:9999"))
         install(ContentNegotiation) { json(Json { encodeDefaults = true }) }
         configureApiErrorHandling()
         configureApiRoutes(

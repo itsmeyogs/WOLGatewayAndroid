@@ -38,7 +38,7 @@ Room entity/DAO/database, DataStore preferences, secure secret adapter, reposito
 
 ### Gateway
 
-Ktor server lifecycle, routing, DTO, serializers, auth middleware, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP6 menyediakan `/api/v1` health, device CRUD, status, dan wake routes. Settings mengatur port serta start/stop melalui `GatewayServer`; bind selalu `127.0.0.1`; token management tetap berada di secure-store boundary.
+ Ktor server lifecycle, routing, DTO, serializers, auth middleware, CORS, request validation, error mapping, repository/use-case calls. Tidak memanggil UI atau Android service langsung. CP6 menyediakan `/api/v1` health, device CRUD, status, dan wake routes. Settings mengatur port, CORS, serta start/stop melalui `GatewayServer`; bind selalu `127.0.0.1`; token management tetap berada di secure-store boundary.
 
 ### WoL/network
 

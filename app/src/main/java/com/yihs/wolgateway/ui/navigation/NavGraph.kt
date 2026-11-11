@@ -17,6 +17,7 @@ import com.yihs.wolgateway.ui.screen.add_devices.AddDevicesScreen
 import com.yihs.wolgateway.network.discovery.DiscoveryResult
 import com.yihs.wolgateway.ui.screen.settings.SettingsScreen
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsScreen
+import com.yihs.wolgateway.ui.screen.api_settings.CorsSettingsScreen
 import com.yihs.wolgateway.ui.screen.devices.DevicesViewModel
 import com.yihs.wolgateway.ui.screen.api_settings.ApiSettingsViewModel
 import com.yihs.wolgateway.ui.screen.tunnel.TunnelScreen
@@ -86,7 +87,11 @@ fun NavGraph(
             ApiSettingsScreen(
                 viewModel = apiSettingsViewModel,
                 onCopyText = onCopyText,
+                onOpenCors = { navigateOnce(Screen.CorsSettings.route) },
             )
+        }
+        composable(Screen.CorsSettings.route) {
+            CorsSettingsScreen(viewModel = apiSettingsViewModel)
         }
         composable(Screen.Tunnel.route) {
             TunnelScreen(

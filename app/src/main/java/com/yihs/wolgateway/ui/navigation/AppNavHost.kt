@@ -68,6 +68,7 @@ fun AppNavHost() {
         Screen.AddDevices.route -> stringResource(R.string.screen_add_devices)
         Screen.Settings.route -> stringResource(R.string.screen_settings)
         Screen.ApiSettings.route -> stringResource(R.string.screen_api_settings)
+        Screen.CorsSettings.route -> stringResource(R.string.screen_api_cors)
         Screen.Tunnel.route -> stringResource(R.string.screen_tunnel)
         Screen.Diagnostics.route -> stringResource(R.string.screen_diagnostics)
         Screen.Details.route -> stringResource(R.string.screen_device_details)

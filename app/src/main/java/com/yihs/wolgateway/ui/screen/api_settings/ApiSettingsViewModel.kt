@@ -11,11 +11,14 @@ import androidx.lifecycle.viewModelScope
 import android.content.Context
 import com.yihs.wolgateway.R
 import com.yihs.wolgateway.androidservice.GatewayService
+import com.yihs.wolgateway.androidservice.GatewayCoordinator
+import com.yihs.wolgateway.data.preferences.GatewayCorsPreferences
 import com.yihs.wolgateway.data.preferences.GatewayStartupPreferences
 import com.yihs.wolgateway.gateway.auth.ApiTokenStore
 import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.server.ServerState
+import com.yihs.wolgateway.gateway.server.parseCorsOrigins
 import com.yihs.wolgateway.tunnel.controller.TunnelController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,6 +38,7 @@ class ApiSettingsViewModel @Inject constructor(
     private val gatewayServer: GatewayServer,
     private val tunnelController: TunnelController,
     private val tokenStore: ApiTokenStore,
+    private val gatewayCoordinator: GatewayCoordinator,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ApiSettingsUiState())
     val state = _state.asStateFlow()
@@ -59,6 +63,8 @@ class ApiSettingsViewModel @Inject constructor(
                 autoStartApi = values[GatewayStartupPreferences.AUTO_START_API] == true,
                 tokenMode = savedTokenMode,
                 tokenPreview = maskToken(token),
+                developmentOrigins = GatewayCorsPreferences.developmentOrigins(values).joinToString(", "),
+                productionOrigins = GatewayCorsPreferences.productionOrigins(values).joinToString(", "),
                 isLoading = false,
             )
             combine(preferences.data, gatewayServer.state) { updatedValues, serverState ->
@@ -67,6 +73,8 @@ class ApiSettingsViewModel @Inject constructor(
                     serverState = serverState,
                     autoStartApi = updatedValues[GatewayStartupPreferences.AUTO_START_API] == true,
                     isLoading = false,
+                    developmentOrigins = GatewayCorsPreferences.developmentOrigins(updatedValues).joinToString(", "),
+                    productionOrigins = GatewayCorsPreferences.productionOrigins(updatedValues).joinToString(", "),
                 )
             }.collect { _state.value = it }
         }
@@ -165,6 +173,43 @@ class ApiSettingsViewModel @Inject constructor(
                     else -> R.string.validation_token_invalid_characters
                 }
                 _state.value = _state.value.copy(tokenInputError = error)
+            }
+        }
+    }
+
+    fun onDevelopmentOriginsChanged(value: String) {
+        _state.value = _state.value.copy(developmentOrigins = value, corsError = false)
+    }
+
+    fun onProductionOriginsChanged(value: String) {
+        _state.value = _state.value.copy(productionOrigins = value, corsError = false)
+    }
+
+    fun saveCorsConfiguration() {
+        val current = _state.value
+        val development = parseCorsOrigins(current.developmentOrigins)
+        val production = parseCorsOrigins(current.productionOrigins)
+        if (development == null || production == null) {
+            _state.value = current.copy(corsError = true)
+            viewModelScope.launch { _events.emit(ApiSettingsMessage(R.string.event_api_cors_invalid)) }
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isCorsSaving = true)
+            try {
+                preferences.edit {
+                    it[GatewayCorsPreferences.DEVELOPMENT_ORIGINS] = GatewayCorsPreferences.encode(development)
+                    it[GatewayCorsPreferences.PRODUCTION_ORIGINS] = GatewayCorsPreferences.encode(production)
+                }
+                if (!gatewayCoordinator.restartActiveRuntime()) {
+                    _events.emit(ApiSettingsMessage(R.string.event_api_cors_restart_failed))
+                } else {
+                    _events.emit(ApiSettingsMessage(R.string.event_api_cors_saved))
+                }
+            } catch (_: Exception) {
+                _events.emit(ApiSettingsMessage(R.string.event_api_cors_restart_failed))
+            } finally {
+                _state.value = _state.value.copy(isCorsSaving = false)
             }
         }
     }

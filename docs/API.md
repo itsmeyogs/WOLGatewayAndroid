@@ -268,3 +268,18 @@ Both must return `401`. Copy the masked token from API Settings for protected re
 The API does not expose a token-management endpoint. Automatic generation, automatic refresh, custom-token save, and copy are API Settings-only operations; tokens remain masked in the UI. An unsaved custom-token selection is discarded when leaving the screen.
 
 The API Settings page does not expose bind-address editing. A port below `1024`, an invalid port, or a port already in use must produce an error and leave the server stopped; it must not terminate the Android process. The Cloudflare Tunnel page does not expose a separate origin field: when connected, its ingress forwards to the same loopback origin `127.0.0.1:<configured API port>`. Tunnel connection failure turns the UI switch off; only an allowlisted short cause such as `Provided Tunnel token is not valid.` is shown, while full runtime diagnostics remain in Logcat. A fresh install shows the token form and no start-failure message. Tunnel token editing is locked during connection, and the masked preview is not copyable.
+
+## CORS
+
+CORS is always installed on the Ktor server. Allowed origins are configured in **Settings → API settings → CORS allowed origins** and stored as non-secret DataStore preferences.
+
+Development defaults to `http://localhost:9999`; production defaults to an empty list. Each field accepts a comma-separated list of complete origins, for example:
+
+```text
+http://localhost:9999, http://127.0.0.1:9999
+https://app.example.com, https://admin.example.com
+```
+
+Origins require `http://` or `https://`, host, and an optional port. Path, query, fragment, wildcard, and wildcard subdomain patterns are rejected. API paths remain independent of the origin, for example `http://127.0.0.1:8080/api/v1/devices`.
+
+The CORS plugin allows `Authorization`, `Content-Type`, `OPTIONS`, `PUT`, and `DELETE`. Bearer authentication remains required for protected endpoints. Saving CORS settings restarts the API first, then reconnects an active tunnel; an API-only runtime restarts without touching the tunnel.

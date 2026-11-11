@@ -110,6 +110,8 @@ One `Connection` surface contains the connection status and connect switch. A se
 
 Settings opens a dedicated API page containing an API server switch, a fixed loopback URL card with copy and port-edit actions, and automatic/custom token modes. The URL is always `http://127.0.0.1:<port>`; only ports `1024..65535` are editable. Tokens remain masked; copy, custom edit, and automatic refresh are available. Show a copy-confirmation snackbar for URL and token copy actions. Show API server status separately from tunnel status. API server toggle success is reflected by the switch/status only; show a snackbar for port-save results and bind/configuration errors, not routine start/stop.
 
+The API page also links to a dedicated CORS origins page. CORS is always active. Development and production each use a multiline text field containing complete `http://` or `https://` origins separated by commas. Notes explain the required scheme, comma separator, and that paths do not belong in an origin. Save is labeled “Save & restart service”; it persists first, then restarts API and an active tunnel in that order.
+
 ### Root & Background Settings
 
 Standard Mode selected by default. Root capability and permission status are informational until user opts in. Service controls, notification state, battery optimization guidance, boot recovery limitation, and OEM troubleshooting. When battery optimization remains enabled, show a startup dialog on Devices with a link to system settings; refresh status on resume.

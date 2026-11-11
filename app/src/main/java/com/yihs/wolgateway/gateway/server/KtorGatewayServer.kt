@@ -23,6 +23,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.yihs.wolgateway.data.preferences.GatewayCorsPreferences
 import java.net.InetAddress
 import java.net.ServerSocket
 
@@ -34,6 +38,7 @@ class KtorGatewayServer @Inject constructor(
     private val checkDeviceStatus: CheckDeviceStatusUseCase,
     private val diagnosticsProvider: Provider<DiagnosticsProvider>,
     private val networkDiscovery: NetworkDiscovery,
+    private val preferences: DataStore<Preferences>,
 ) : GatewayServer {
     private val lock = Any()
     private var engine: EmbeddedServer<*, *>? = null
@@ -62,6 +67,7 @@ class KtorGatewayServer @Inject constructor(
                 port = config.port,
                 watchPaths = emptyList(),
             ) {
+                configureApiCors(runBlocking { preferences.data.first().let(GatewayCorsPreferences::allOrigins) })
                 install(ContentNegotiation) {
                     json(Json { encodeDefaults = true; ignoreUnknownKeys = false })
                 }

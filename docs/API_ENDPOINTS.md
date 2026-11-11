@@ -855,3 +855,9 @@ API tidak menaruh token atau secret pada response error, log, notification, atau
 - Tunnel hanya meneruskan API yang sama; tunnel bukan mekanisme autentikasi.
 - Request body dibatasi 64 KiB.
 - Tidak ada endpoint token-management, shell execution, atau arbitrary process execution.
+
+## 9. CORS
+
+CORS selalu aktif pada Ktor. Allowed origins disimpan melalui API Settings sebagai dua list non-secret: development dan production. Input memakai origin lengkap (`http://` atau `https://`) dan beberapa origin dipisahkan dengan koma. Origin tidak boleh memuat path, query, fragment, wildcard, atau wildcard subdomain.
+
+Default development adalah `http://localhost:9999`; production kosong. Preflight browser diizinkan untuk endpoint API sesuai konfigurasi origin. Header `Authorization` dan `Content-Type` diizinkan. Token Bearer tetap wajib untuk endpoint protected; CORS bukan autentikasi.

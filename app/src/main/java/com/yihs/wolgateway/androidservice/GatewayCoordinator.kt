@@ -9,6 +9,7 @@ import com.yihs.wolgateway.gateway.server.GatewayServer
 import com.yihs.wolgateway.gateway.server.GatewayServerConfig
 import com.yihs.wolgateway.gateway.server.ServerState
 import com.yihs.wolgateway.tunnel.controller.TunnelController
+import com.yihs.wolgateway.tunnel.model.TunnelState
 import com.yihs.wolgateway.root.RootSupervisor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.filter
@@ -135,6 +136,32 @@ class GatewayCoordinator @Inject constructor(
 
         val port = values[API_PORT] ?: DEFAULT_API_PORT
         tunnelController.reconnect(localApiOrigin(port))
+    }
+
+    suspend fun restartActiveRuntime(): Boolean = lifecycleMutex.withLock {
+        val tunnelWasActive = tunnelController.state.value.status in setOf(
+            TunnelState.CONNECTING,
+            TunnelState.CONNECTED,
+            TunnelState.RECONNECTING,
+        )
+        val apiShouldRun = gatewayServer.state.value == ServerState.RUNNING || tunnelWasActive
+        if (!apiShouldRun) return@withLock true
+
+        tunnelController.disconnectAndWait()
+        gatewayServer.stop()
+        return@withLock try {
+            val port = preferences.data.first()[API_PORT] ?: DEFAULT_API_PORT
+            gatewayServer.configure(GatewayServerConfig(port))
+            gatewayServer.start()
+            GatewayService.start(context)
+            if (tunnelWasActive && tunnelController.state.value.tokenConfigured) {
+                tunnelController.connect(localApiOrigin(port))
+            }
+            true
+        } catch (_: Exception) {
+            gatewayServer.stop()
+            false
+        }
     }
 
     fun onNetworkLost() {

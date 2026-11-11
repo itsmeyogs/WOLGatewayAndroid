@@ -1,6 +1,7 @@
 package com.yihs.wolgateway.ui.screen.api_settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +44,7 @@ import com.yihs.wolgateway.gateway.server.ServerState
 fun ApiSettingsScreen(
     viewModel: ApiSettingsViewModel,
     onCopyText: (String) -> Unit,
+    onOpenCors: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -144,6 +146,18 @@ fun ApiSettingsScreen(
                             onRefresh = if (state.tokenMode == ApiTokenMode.AUTOMATIC) viewModel::generateToken else null,
                         )
                     }
+                }
+                HorizontalDivider()
+                Column(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenCors).padding(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(stringResource(R.string.settings_api_cors), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.settings_api_cors_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
