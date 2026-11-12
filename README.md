@@ -14,6 +14,7 @@ WoL Gateway turns an Android device into a Wake-on-LAN (WoL) gateway to wake PCs
 - Magic packet transmission via UDP broadcast.
 - Target status checks via ICMP and/or TCP.
 - Versioned REST API on `/api/v1`.
+- Configurable CORS origins for browser/web client access.
 - API token stored using Android Keystore.
 - Optional Cloudflare Tunnel for external network access.
 - Foreground service, API autostart, tunnel autostart, and network recovery.
@@ -144,6 +145,29 @@ Full endpoint specifications are documented in [`docs/API_ENDPOINTS.md`](docs/AP
 - Displayed masked in UI.
 - No remote token-management endpoint exists.
 - Never logged, notified, exposed in diagnostics, error envelopes, reports, or screenshots.
+
+## CORS Allowed Origins
+
+When calling the REST API directly from browser-based clients (such as web applications or single-page apps), browsers enforce Cross-Origin Resource Sharing (CORS). If the web client domain is not allowlisted, requests will fail due to CORS policy errors.
+
+CORS is always active on the Ktor server and configurable via **Settings → API settings → CORS allowed origins**.
+
+### Configuration
+
+- **Development origins:** Web client origins during local development (default: `http://localhost:9999`).
+- **Production origins:** Web client production domains (e.g. `https://app.example.com`).
+
+### Format & Validation Rules
+
+- Enter complete origins including scheme: `http://` or `https://` (and port if non-standard).
+- Separate multiple origins with commas: `http://localhost:9999, https://app.example.com`.
+- **Do not** include paths, query strings, fragments, wildcards (`*`), or wildcard subdomains.
+- Valid: `http://localhost:9999`, `https://app.example.com:8443`.
+- Invalid: `localhost:9999` (missing scheme), `https://app.example.com/` (trailing path), `https://*.example.com` (wildcards rejected).
+
+Tap **Save & restart service** to apply. The app persists the allowed origins to DataStore, restarts the Ktor API server, and reconnects an active Cloudflare Tunnel.
+
+Preflight (`OPTIONS`) requests, along with `Authorization` and `Content-Type` headers, are allowed for configured origins. CORS is not an authentication layer; valid Bearer tokens remain required for protected endpoints.
 
 ## Cloudflare Tunnel
 
@@ -296,6 +320,7 @@ Binary provenance and lifecycle details are documented in [`docs/ARCHITECTURE.md
 | `502 Bad Gateway` | Ensure API service is active, route port matches API port, and origin is `http://127.0.0.1:<port>`. |
 | Hostname does not resolve | Verify public route hostname and DNS record on Cloudflare dashboard. |
 | Tunnel `CONNECTED`, API `401` | Tunnel is healthy; supply valid API Bearer token. |
+| Browser CORS error / blocked | Add client origin (e.g. `https://app.example.com`) in **Settings → API settings → CORS allowed origins** and save. |
 | `/health` OK, device fails | Check device ID, target status, MAC, broadcast address, firewall, and LAN connectivity. |
 | Repeated reconnects | Check Android connectivity, battery optimization exclusions, and OEM background kill policies. |
 
@@ -319,6 +344,7 @@ Root Mode does not:
 ## Security
 
 - API binds loopback-only (`127.0.0.1`).
+- Configurable CORS allowed origins (rejects wildcards and paths; preflight support for web clients).
 - Protected routes enforce Bearer authentication.
 - Constant-time token comparison prevents timing attacks.
 - Request body capped at 64 KiB.
